@@ -1,0 +1,165 @@
+import type { GridSettings, GridIntervalUnit } from '@/types/timeline'
+
+// Default grid settings as specified in requirements
+export const DEFAULT_GRID_SETTINGS: GridSettings = {
+  unit: 'month',
+  value: 1,
+}
+
+// Grid interval units for dropdown selection
+export const GRID_INTERVAL_UNITS: GridIntervalUnit[] = ['day', 'month', 'year']
+
+// User-friendly labels for grid units
+export const GRID_UNIT_LABELS: Record<GridIntervalUnit, string> = {
+  day: 'Day(s)',
+  month: 'Month(s)',
+  year: 'Year(s)',
+}
+
+// Timeline bounds for initial view
+export const DEFAULT_TIMELINE_BOUNDS = {
+  minDate: Date.now() - 365 * 24 * 60 * 60 * 1000, // 1 year ago
+  maxDate: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year from now
+}
+
+// Timeline constants for calculations and constraints
+export const TIMELINE_CONSTANTS = {
+  MIN_INTERVAL_DURATION: 1000, // 1 second minimum
+  MAX_INTERVAL_DURATION: 365 * 24 * 60 * 60 * 1000, // 1 year maximum
+  DEFAULT_PIXELS_PER_GRID_UNIT: 100,
+  SNAP_THRESHOLD: 10, // pixels
+  MIN_GRID_VALUE: 1,
+  MAX_GRID_VALUE: 12, // Maximum value for grid units
+} as const
+
+// Color palette for intervals
+export const INTERVAL_COLORS = [
+  '#3B82F6', // blue
+  '#EF4444', // red
+  '#10B981', // green
+  '#F59E0B', // yellow
+  '#8B5CF6', // purple
+  '#F97316', // orange
+  '#06B6D4', // cyan
+  '#EC4899', // pink
+] as const
+
+export type IntervalColor = (typeof INTERVAL_COLORS)[number]
+
+// Keyboard shortcuts
+export const KEYBOARD_SHORTCUTS = {
+  COPY: ['Control', 'c'],
+  PASTE: ['Control', 'v'],
+  DUPLICATE: ['Control', 'd'],
+  DELETE: ['Delete'],
+  BACKSPACE: ['Backspace'],
+  GRID_SETTINGS: ['Control', '1'],
+  SELECT_ALL: ['Control', 'a'],
+  ESCAPE: ['Escape'],
+} as const
+
+// Mouse interaction constants
+export const MOUSE_CONSTANTS = {
+  DOUBLE_CLICK_DELAY: 300, // milliseconds
+  DRAG_THRESHOLD: 5, // pixels
+  RESIZE_HANDLE_WIDTH: 8, // pixels
+} as const
+
+// Grid calculation constants
+export const GRID_CALCULATION_CONSTANTS = {
+  // Approximate days per unit for calculations
+  DAYS_PER_MONTH: 30,
+  DAYS_PER_YEAR: 365,
+
+  // Minimum grid unit values for validation
+  MIN_DAYS: 1,
+  MAX_DAYS: 365,
+  MIN_MONTHS: 1,
+  MAX_MONTHS: 12,
+  MIN_YEARS: 1,
+  MAX_YEARS: 10,
+} as const
+
+// Export/Import constants
+export const EXPORT_CONSTANTS = {
+  DEFAULT_FILENAME: 'timeline_intervals',
+  FILE_EXTENSION: '.json',
+  MIME_TYPE: 'application/json',
+} as const
+
+// UI constants
+export const UI_CONSTANTS = {
+  TOOLBAR_HEIGHT: 48,
+  GRID_HEADER_HEIGHT: 32,
+  INTERVAL_HEIGHT: 24,
+  INTERVAL_BORDER_RADIUS: 4,
+  SELECTION_BORDER_WIDTH: 2,
+  MARQUEE_OPACITY: 0.3,
+} as const
+
+// Validation messages
+export const VALIDATION_MESSAGES = {
+  INVALID_INTERVAL: 'Invalid interval data',
+  OVERLAPPING_INTERVALS: 'Intervals cannot overlap',
+  INVALID_TIMESTAMP: 'Invalid timestamp',
+  INVALID_DURATION: 'Invalid duration',
+  INVALID_GRID_SETTINGS: 'Invalid grid settings',
+} as const
+
+// Default metadata values
+export const DEFAULT_METADATA = {
+  LABEL: 'Untitled Interval',
+  DESCRIPTION: '',
+  TAGS: [],
+  COLOR: INTERVAL_COLORS[0],
+} as const
+
+// Grid unit specific settings
+export const GRID_UNIT_SETTINGS: Record<
+  GridIntervalUnit,
+  {
+    minValue: number
+    maxValue: number
+    step: number
+    commonValues: number[]
+  }
+> = {
+  day: {
+    minValue: 1,
+    maxValue: 365,
+    step: 1,
+    commonValues: [1, 7, 14, 30, 90, 180, 365],
+  },
+  month: {
+    minValue: 1,
+    maxValue: 12,
+    step: 1,
+    commonValues: [1, 3, 6, 12],
+  },
+  year: {
+    minValue: 1,
+    maxValue: 10,
+    step: 1,
+    commonValues: [1, 2, 5, 10],
+  },
+} as const
+
+// Re-export all constants for easier imports
+export * from '../constants'
+
+// Additional grouped constants
+export const TIMELINE_DEFAULTS = {
+  GRID_SETTINGS: DEFAULT_GRID_SETTINGS,
+  BOUNDS: DEFAULT_TIMELINE_BOUNDS,
+  METADATA: DEFAULT_METADATA,
+} as const
+
+export const INTERACTION_CONSTANTS = {
+  KEYBOARD: KEYBOARD_SHORTCUTS,
+  MOUSE: MOUSE_CONSTANTS,
+} as const
+
+export const VALIDATION_CONSTANTS = {
+  MESSAGES: VALIDATION_MESSAGES,
+  GRID_UNITS: GRID_UNIT_SETTINGS,
+} as const
