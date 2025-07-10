@@ -3,6 +3,7 @@ import type {
   TimelineInterval,
   GridSettings,
   TimelineBounds,
+  GridIntervalUnit,
 } from '../types/timeline'
 
 /**
@@ -128,4 +129,88 @@ export function getDurationText(startTime: number, endTime: number): string {
   } else {
     return `${Math.round(duration.as('seconds'))} seconds`
   }
+}
+
+/**
+ * Format grid line label based on grid unit and date
+ */
+export function formatGridLineLabel(
+  date: DateTime,
+  gridUnit: GridIntervalUnit
+): string {
+  switch (gridUnit) {
+    case 'day':
+      return date.toFormat('MMM dd')
+    case 'month':
+      return date.toFormat('MMM yyyy')
+    case 'year':
+      return date.toFormat('yyyy')
+    default:
+      return date.toFormat('yyyy-MM-dd')
+  }
+}
+
+/**
+ * Check if a grid line should be major based on grid unit and date
+ */
+export function isMajorGridLine(
+  date: DateTime,
+  gridUnit: GridIntervalUnit
+): boolean {
+  switch (gridUnit) {
+    case 'day':
+      return date.day === 1 // Start of month
+    case 'month':
+      return date.month === 1 // Start of year
+    case 'year':
+      return true // All year lines are major
+    default:
+      return false
+  }
+}
+
+/**
+ * Get the appropriate grid line styling based on importance
+ */
+export function getGridLineStyles(isMajor: boolean) {
+  return {
+    borderClass: isMajor
+      ? 'border-l-2 border-gray-300'
+      : 'border-l border-gray-100',
+    labelClass: isMajor
+      ? 'text-gray-700 bg-white font-medium'
+      : 'text-gray-500 bg-gray-50',
+  }
+}
+
+/**
+ * Check if a new interval would overlap with any existing intervals
+ */
+export function wouldOverlapWithExisting(
+  newInterval: { startTime: number; endTime: number },
+  existingIntervals: TimelineInterval[]
+): boolean {
+  return existingIntervals.some(existing =>
+    intervalsOverlap(
+      {
+        id: 'temp',
+        startTime: newInterval.startTime,
+        endTime: newInterval.endTime,
+      },
+      existing
+    )
+  )
+}
+
+/**
+ * Get overlapping intervals for a given interval
+ */
+export function getOverlappingIntervals(
+  interval: TimelineInterval,
+  allIntervals: TimelineInterval[]
+): TimelineInterval[] {
+  return allIntervals.filter(
+    existing =>
+      existing.id !== interval.id && intervalsOverlap(interval, existing)
+  )
 }

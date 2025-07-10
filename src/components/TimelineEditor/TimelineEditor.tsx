@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useTimelineReducer } from './useTimelineReducer'
+import { IntervalGrid } from './IntervalGrid'
 import { generateUUID } from '../../lib/utils'
 import { formatTimestamp, getDurationText } from '../../lib/timeline-utils'
 import {
@@ -7,7 +8,16 @@ import {
   DEFAULT_METADATA,
   UI_CONSTANTS,
   TIMELINE_CONSTANTS,
+  DEFAULT_GRID_SETTINGS,
+  DEFAULT_TIMELINE_BOUNDS,
+  TIMELINE_BEHAVIOR,
+  TIMELINE_VIEW_MODES,
 } from '../../lib/constants'
+import type {
+  GridSettings,
+  TimelineBounds,
+  GridIntervalUnit,
+} from '../../types/timeline'
 
 export function TimelineEditor() {
   const {
@@ -19,6 +29,22 @@ export function TimelineEditor() {
     toggleIntervalSelection,
     getSelectedIntervals,
   } = useTimelineReducer()
+
+  // Grid settings state
+  const [gridSettings, setGridSettings] = useState<GridSettings>(
+    DEFAULT_GRID_SETTINGS
+  )
+  const [timelineBounds] = useState<TimelineBounds>(DEFAULT_TIMELINE_BOUNDS)
+
+  // Overlap prevention state
+  const [preventOverlap, setPreventOverlap] = useState<boolean>(
+    TIMELINE_BEHAVIOR.PREVENT_OVERLAP
+  )
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<'grid' | 'badge'>(
+    TIMELINE_VIEW_MODES.GRID
+  )
 
   const handleAddTestInterval = () => {
     const now = Date.now()
@@ -43,6 +69,24 @@ export function TimelineEditor() {
     selectedIntervalIds.forEach(id => deleteInterval(id))
   }
 
+  const handleIntervalCreate = (startTime: number, endTime: number) => {
+    const colorIndex = intervals.length % INTERVAL_COLORS.length
+    const newInterval = {
+      id: generateUUID(),
+      startTime,
+      endTime,
+      metadata: {
+        label: `New Interval ${intervals.length + 1}`,
+        color: INTERVAL_COLORS[colorIndex],
+        description: `Created from ${formatTimestamp(
+          startTime
+        )} to ${formatTimestamp(endTime)}`,
+        tags: ['created'],
+      },
+    }
+    addInterval(newInterval)
+  }
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Timeline Editor</h2>
@@ -65,6 +109,87 @@ export function TimelineEditor() {
           className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50">
           Delete Selected ({selectedIntervalIds.size})
         </button>
+      </div>
+
+      {/* Grid Settings */}
+      <div className="mb-4 p-3 bg-gray-50 rounded">
+        <h3 className="text-sm font-semibold mb-2">Grid Settings</h3>
+        <div className="flex gap-4 flex-wrap">
+          <div>
+            <label className="text-xs text-gray-600">Unit:</label>
+            <select
+              value={gridSettings.unit}
+              onChange={e =>
+                setGridSettings(prev => ({
+                  ...prev,
+                  unit: e.target.value as GridIntervalUnit,
+                }))
+              }
+              className="ml-2 px-2 py-1 text-sm border rounded">
+              <option value="day">Day(s)</option>
+              <option value="month">Month(s)</option>
+              <option value="year">Year(s)</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-600">Value:</label>
+            <input
+              type="number"
+              min="1"
+              max="12"
+              value={gridSettings.value}
+              onChange={e =>
+                setGridSettings(prev => ({
+                  ...prev,
+                  value: parseInt(e.target.value),
+                }))
+              }
+              className="ml-2 px-2 py-1 text-sm border rounded w-16"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-600 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={preventOverlap}
+                onChange={e => setPreventOverlap(e.target.checked)}
+                className="rounded"
+              />
+              Prevent Overlap
+            </label>
+          </div>
+          <div>
+            <label className="text-xs text-gray-600">View Mode:</label>
+            <select
+              value={viewMode}
+              onChange={e => setViewMode(e.target.value as 'grid' | 'badge')}
+              className="ml-2 px-2 py-1 text-sm border rounded">
+              <option value="grid">Grid</option>
+              <option value="badge">Badge</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Timeline Grid */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold mb-2">
+          Timeline {viewMode === TIMELINE_VIEW_MODES.BADGE ? 'Badge' : 'Grid'}{' '}
+          View
+        </h3>
+        <div className="overflow-x-auto">
+          <IntervalGrid
+            intervals={intervals}
+            selectedIntervalIds={selectedIntervalIds}
+            gridSettings={gridSettings}
+            timelineBounds={timelineBounds}
+            onIntervalSelect={toggleIntervalSelection}
+            onIntervalCreate={handleIntervalCreate}
+            preventOverlap={preventOverlap}
+            viewMode={viewMode}
+            className="min-w-full"
+          />
+        </div>
       </div>
 
       {/* Intervals List */}

@@ -163,3 +163,30 @@ export const VALIDATION_CONSTANTS = {
   MESSAGES: VALIDATION_MESSAGES,
   GRID_UNITS: GRID_UNIT_SETTINGS,
 } as const
+
+// Timeline behavior constants
+export const TIMELINE_BEHAVIOR = {
+  PREVENT_OVERLAP: true, // Default: prevent overlapping intervals
+  ALLOW_OVERLAP: false, // Allow overlapping intervals
+  SNAP_TO_GRID: true, // Default: snap intervals to grid
+  FREE_POSITIONING: false, // Allow free positioning
+} as const
+
+// Timeline view modes
+export const TIMELINE_VIEW_MODES = {
+  GRID: 'grid',
+  BADGE: 'badge',
+} as const
+
+export type TimelineViewMode =
+  (typeof TIMELINE_VIEW_MODES)[keyof typeof TIMELINE_VIEW_MODES]
+
+// Badge view constants
+export const BADGE_VIEW_CONSTANTS = {
+  BADGE_SIZE: 12, // pixels
+  CONNECTION_LINE_WIDTH: 2, // pixels
+  BADGE_SPACING: 4, // pixels between badges
+  HOVER_OPACITY: 1.0,
+  NORMAL_OPACITY: 0.5,
+  CONNECTION_OPACITY: 0.3,
+} as const
