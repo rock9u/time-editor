@@ -345,7 +345,7 @@ export function TimelineEditor() {
       onHalf={handleHalf}
       onOpenGridSettings={() => setIsGridSettingsOpen(true)}>
       {/* Grid Settings */}
-      <div className="mb-4 p-3 bg-gray-50 rounded">
+      <div className="mb-4 p-3rounded">
         <h2 className="text-lg font-semibold mb-2">Grid Settings</h2>
         <div className="p-4">
           {/* Controls */}

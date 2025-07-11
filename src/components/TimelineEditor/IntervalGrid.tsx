@@ -633,7 +633,7 @@ export function IntervalGrid({
       {/* Grid Container */}
       <div
         ref={gridRef}
-        className="relative bg-white border border-gray-200 rounded"
+        className="relative bg-background text-foreground border border-gray-200 rounded"
         style={{
           width: `${gridDimensions.totalWidth}px`,
           height: `${UI_CONSTANTS.GRID_HEADER_HEIGHT + 100}px`,
@@ -656,9 +656,9 @@ export function IntervalGrid({
             <div
               className={`absolute top-1 left-1 text-xs px-1 rounded ${
                 line.isMajor
-                  ? 'text-gray-700 bg-white font-medium'
-                  : 'text-gray-500 bg-gray-50'
-              }`}
+                  ? 'text-gray-700 bg-background font-medium'
+                  : 'text-gray-500 bg-background'
+              } whitespace-nowrap truncate cursor-default select-none`}
               style={{ zIndex: 1 }}>
               {line.label}
             </div>
