@@ -35,11 +35,6 @@ export function TimelineEditor() {
     setGridSettings,
     copyIntervals,
     selectMultipleIntervals,
-    pasteIntervals,
-    duplicateIntervals,
-    getIntervalEndTime,
-    moveInterval,
-    resizeInterval,
   } = useTimeline()
 
   const { intervals, selectedIntervalIds, gridSettings, clipboard } = state

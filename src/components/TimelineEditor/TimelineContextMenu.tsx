@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -6,21 +5,22 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import type { TimelineIntervalV2 } from '@/contexts/TimelineContext'
 import {
-  Copy,
   ClipboardList,
+  Copy,
   CopyPlus,
-  Trash2,
   RotateCcw,
   Settings,
+  Trash2,
 } from 'lucide-react'
+import React from 'react'
 import { KEYBOARD_SHORTCUTS } from '../../lib/constants'
-import type { TimelineInterval } from '../../types/timeline'
 
 interface TimelineContextMenuProps {
   children: React.ReactNode
-  selectedIntervals: TimelineInterval[]
-  clipboard: TimelineInterval[]
+  selectedIntervals: TimelineIntervalV2[]
+  clipboard: TimelineIntervalV2[]
   onCopy: () => void
   onPaste: () => void
   onDuplicate: () => void

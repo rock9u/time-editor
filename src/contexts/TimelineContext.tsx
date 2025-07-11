@@ -1,8 +1,8 @@
+import { getIntervalEndTime } from '@/lib/timeline-utils-v2'
+import { DateTime } from 'luxon'
 import type { ReactNode } from 'react'
 import { createContext, useContext, useReducer } from 'react'
-import { DateTime } from 'luxon'
-import type { GridSettings, GridIntervalUnit } from '../types/timeline'
-import { getIntervalEndTime } from '@/lib/timeline-utils-v2'
+import type { GridIntervalUnit, GridSettings } from '../types/timeline'
 
 // New interval structure using start + grid + amount
 export interface TimelineIntervalV2 {
@@ -361,13 +361,6 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
     state.selectedIntervalIds.forEach(id => deleteInterval(id))
   }
 
-  const moveInterval = (id: string, newStartTime: number) => {
-    dispatch({ type: 'MOVE_INTERVAL', payload: { id, newStartTime } })
-  }
-  const resizeInterval = (id: string, newGridAmount: number) => {
-    dispatch({ type: 'RESIZE_INTERVAL', payload: { id, newGridAmount } })
-  }
-
   // Helper function to get milliseconds per grid unit
   const getMillisecondsPerGridUnit = (settings: GridSettings): number => {
     const { unit, value } = settings
@@ -402,8 +395,6 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
     duplicateIntervals,
     getIntervalEndTime,
     getIntervalDuration,
-    moveInterval,
-    resizeInterval,
     // New handlers
     handleCopy,
     handlePaste,
