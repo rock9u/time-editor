@@ -80,7 +80,7 @@ export function TimelineEditor() {
             break
           case 'v':
             e.preventDefault()
-            handlePaste()
+            handlePasteClipboard()
             break
           case 'd':
             e.preventDefault()
@@ -117,57 +117,56 @@ export function TimelineEditor() {
     const selectedIntervals = state.intervals.filter(interval =>
       selectedIntervalIds.has(interval.id)
     )
-    if (selectedIntervals.length > 0) {
-      // Deep clone the selected intervals
-      const clonedIntervals = selectedIntervals.map(interval => ({
-        ...interval,
-        id: generateUUID(), // Generate new IDs for clipboard
-      }))
-      copyIntervals(clonedIntervals)
-      clearSelection()
-    }
-  }, [selectedIntervalIds, state.intervals, clearSelection])
+    copyIntervals(selectedIntervals.map(interval => interval.id))
+  }, [selectedIntervalIds, state.intervals, copyIntervals])
 
   // Paste functionality
-  const handlePaste = useCallback(() => {
+  const handlePaste = useCallback(
+    (targetIds: Set<string>) => {
+      const maxSelectedIntervalEndTime = Math.max(
+        ...state.intervals
+          .filter(interval => targetIds.has(interval.id))
+          .map(interval => interval.endTime)
+      )
+      const minSelectedIntervalStartTime = Math.min(
+        ...state.intervals
+          .filter(interval => targetIds.has(interval.id))
+          .map(interval => interval.startTime)
+      )
+
+      state.intervals
+        .filter(interval => targetIds.has(interval.id))
+        .forEach(interval => {
+          const newInterval = {
+            ...interval,
+            id: generateUUID(),
+            startTime: DateTime.fromMillis(maxSelectedIntervalEndTime)
+              .plus({
+                milliseconds: interval.startTime - minSelectedIntervalStartTime,
+              })
+              .toMillis(),
+            gridUnit: interval.gridUnit,
+            gridAmount: interval.gridAmount,
+          }
+          addInterval(newInterval)
+        })
+    },
+    [state.intervals, addInterval]
+  )
+
+  const handlePasteClipboard = useCallback(() => {
     if (clipboard.length === 0) return
 
-    // Calculate offset to prevent perfect overlap
-    const offset = getMillisecondsPerGridUnit(gridSettings)
-
-    clipboard.forEach(clipboardInterval => {
-      const newInterval = {
-        ...clipboardInterval,
-        id: generateUUID(),
-        startTime: clipboardInterval.startTime + offset,
-        endTime: clipboardInterval.endTime + offset,
-      }
-      addInterval(newInterval)
-    })
+    handlePaste(new Set(clipboard.map(interval => interval.id)))
 
     copyIntervals([])
-  }, [clipboard, gridSettings, addInterval])
+  }, [clipboard, handlePaste, selectedIntervalIds, copyIntervals])
 
   // Duplicate functionality
   const handleDuplicate = useCallback(() => {
-    const selectedIntervals = state.intervals.filter(interval =>
-      selectedIntervalIds.has(interval.id)
-    )
-    if (selectedIntervals.length === 0) return
-
-    // Calculate offset to prevent perfect overlap
-    const offset = getMillisecondsPerGridUnit(gridSettings)
-
-    selectedIntervals.forEach(interval => {
-      const newInterval = {
-        ...interval,
-        id: generateUUID(),
-        startTime: interval.startTime + offset,
-        endTime: interval.endTime + offset,
-      }
-      addInterval(newInterval)
-    })
-  }, [selectedIntervalIds, gridSettings, addInterval, state.intervals])
+    if (selectedIntervalIds.size === 0) return
+    handlePaste(selectedIntervalIds)
+  }, [selectedIntervalIds, handlePaste])
 
   const handleMultiply = useCallback(
     (factor: number) => {
@@ -183,12 +182,11 @@ export function TimelineEditor() {
       selectedIntervals.forEach(interval => {
         const newStartTime =
           minStartTime + (interval.startTime - minStartTime) * factor
-        const newEndTime =
-          minStartTime + (interval.endTime - minStartTime) * factor
 
         updateInterval(interval.id, {
           startTime: newStartTime,
-          endTime: newEndTime,
+          gridAmount: interval.gridAmount * factor,
+          gridUnit: interval.gridUnit,
         })
       })
     },
@@ -210,21 +208,6 @@ export function TimelineEditor() {
     selectedIntervalIds.forEach(id => deleteInterval(id))
   }, [selectedIntervalIds, deleteInterval])
 
-  // Helper function to get milliseconds per grid unit
-  const getMillisecondsPerGridUnit = (settings: GridSettings): number => {
-    const { unit, value } = settings
-    switch (unit) {
-      case 'day':
-        return value * 24 * 60 * 60 * 1000
-      case 'month':
-        return value * 30 * 24 * 60 * 60 * 1000 // Approximate
-      case 'year':
-        return value * 365 * 24 * 60 * 60 * 1000
-      default:
-        return 24 * 60 * 60 * 1000
-    }
-  }
-
   const handleAddTestInterval = () => {
     const testMonth = DateTime.now().startOf('month').plus({
       months: intervals.length,
@@ -241,7 +224,11 @@ export function TimelineEditor() {
         tags: ['test', 'demo'],
       },
     }
-    addInterval(newInterval)
+    addInterval({
+      ...newInterval,
+      gridUnit: 'month',
+      gridAmount: 1,
+    })
   }
 
   const handleIntervalCreate = (startTime: number, endTime: number) => {
@@ -333,7 +320,7 @@ export function TimelineEditor() {
       )}
       clipboard={clipboard}
       onCopy={handleCopy}
-      onPaste={handlePaste}
+      onPaste={handlePasteClipboard}
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}
       onDouble={handleDouble}
@@ -443,6 +430,16 @@ export function TimelineEditor() {
           </div>
         </div>
 
+        {/* clipboard */}
+        <h4 className="font-bold">Clipboard:</h4>
+        <ul className="mt-2 space-y-1">
+          {clipboard.map(interval => (
+            <li key={interval.id} className="text-sm">
+              {interval.metadata?.label || DEFAULT_METADATA.LABEL}
+            </li>
+          ))}
+        </ul>
+
         {/* Intervals List */}
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">
@@ -526,7 +523,7 @@ export function TimelineEditor() {
           )}
           clipboard={clipboard}
           onCopy={handleCopy}
-          onPaste={handlePaste}
+          onPaste={handlePasteClipboard}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
           onDouble={handleDouble}

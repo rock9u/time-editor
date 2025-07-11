@@ -1,5 +1,3 @@
-import type { GridIntervalUnit } from './timeline'
-
 // New interval structure using start + grid + amount
 export interface TimelineIntervalV2 {
   id: string

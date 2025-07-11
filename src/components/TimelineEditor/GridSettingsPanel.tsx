@@ -1,12 +1,11 @@
-import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -15,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useState } from 'react'
 import { validateGridSettings } from '../../lib/timeline-utils'
-import type { GridSettings, GridIntervalUnit } from '../../types/timeline'
+import type { GridIntervalUnit, GridSettings } from '../../types/timeline'
 
 interface GridSettingsPanelProps {
   isOpen: boolean

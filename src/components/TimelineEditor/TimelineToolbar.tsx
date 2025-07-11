@@ -1,26 +1,25 @@
-import React from 'react'
-import {
-  Copy,
-  ClipboardList,
-  CopyPlus,
-  Trash2,
-  RotateCcw,
-  X,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  ClipboardList,
+  Copy,
+  CopyPlus,
+  RotateCcw,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { KEYBOARD_SHORTCUTS } from '../../lib/constants'
-import type { TimelineInterval } from '../../types/timeline'
+import type { TimelineIntervalV2 } from '../../types/timeline'
 
 interface TimelineToolbarProps {
-  selectedIntervals: TimelineInterval[]
-  clipboard: TimelineInterval[]
+  selectedIntervals: TimelineIntervalV2[]
+  clipboard: TimelineIntervalV2[]
   onCopy: () => void
   onPaste: () => void
   onDuplicate: () => void

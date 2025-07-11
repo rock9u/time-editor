@@ -15,8 +15,8 @@ export const DynamicCirclesInBigCircle = ({
     const updateSize = () => {
       if (containerRef.current) {
         setContainerSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
+          width: (containerRef.current as HTMLElement).offsetWidth,
+          height: (containerRef.current as HTMLElement).offsetHeight,
         })
       }
     }

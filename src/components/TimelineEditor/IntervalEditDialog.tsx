@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
 import { DateTime } from 'luxon'
-import type { TimelineInterval } from '../../types/timeline'
+import { useEffect, useState } from 'react'
 import { formatTimestamp } from '../../lib/timeline-utils'
+import type { TimelineInterval } from '../../types/timeline'
 
 interface IntervalEditDialogProps {
   interval: TimelineInterval | null

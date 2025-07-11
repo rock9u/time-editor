@@ -4,6 +4,7 @@ import type {
   GridSettings,
   GridIntervalUnit,
 } from '../types/timeline'
+import { snapToGrid } from '@/lib/timeline-utils'
 
 /**
  * Calculate the end time of an interval using Luxon for accurate calendar calculations
@@ -148,7 +149,7 @@ export function createIntervalV2(
  * Validate that an interval is properly structured
  */
 export function validateIntervalV2(interval: TimelineIntervalV2): boolean {
-  return (
+  return !!(
     interval.id &&
     typeof interval.startTime === 'number' &&
     interval.startTime >= 0 &&

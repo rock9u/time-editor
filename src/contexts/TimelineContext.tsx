@@ -126,7 +126,7 @@ interface TimelineContextValue {
   state: TimelineState
   dispatch: React.Dispatch<TimelineAction>
   // Helper functions
-  addInterval: (interval: Omit<TimelineIntervalV2, 'id'>) => void
+  addInterval: (interval: TimelineIntervalV2 & { id?: string }) => void
   updateInterval: (id: string, updates: Partial<TimelineIntervalV2>) => void
   deleteInterval: (id: string) => void
   selectInterval: (id: string) => void
@@ -139,8 +139,14 @@ interface TimelineContextValue {
   duplicateIntervals: (ids: string[]) => void
   getIntervalEndTime: (interval: TimelineIntervalV2) => number
   getIntervalDuration: (interval: TimelineIntervalV2) => number
-  moveInterval: (id: string, newStartTime: number) => void
-  resizeInterval: (id: string, newGridAmount: number) => void
+  handleCopy: () => void
+  handlePaste: () => void
+  handleDuplicate: () => void
+  handleMultiply: (factor: number) => void
+  handleDouble: () => void
+  handleHalf: () => void
+  handleDelete: () => void
+  getMillisecondsPerGridUnit: (settings: GridSettings) => number
 }
 
 const TimelineContext = createContext<TimelineContextValue | undefined>(

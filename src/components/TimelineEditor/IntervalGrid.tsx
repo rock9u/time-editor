@@ -23,10 +23,11 @@ import type {
   GridSettings,
   TimelineBounds,
   TimelineInterval,
+  TimelineIntervalV2,
 } from '../../types/timeline'
 
 interface IntervalGridProps {
-  intervals: TimelineInterval[]
+  intervals: (TimelineIntervalV2 & { endTime: number })[]
   selectedIntervalIds: Set<string>
   gridSettings: GridSettings
   timelineBounds: TimelineBounds
