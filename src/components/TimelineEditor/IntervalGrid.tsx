@@ -533,7 +533,14 @@ export function IntervalGrid({
   )
 
   // Render resize handles for grid view
-  const renderGridResizeHandles = (interval: any) => {
+  const renderGridResizeHandles = (
+    interval: TimelineInterval & {
+      startLeft: number
+      endLeft: number
+      width: number
+      isSelected: boolean
+    }
+  ) => {
     const isResizing = resizingIntervalId === interval.id
     const isResizingStart = isResizing && resizeEdge === 'start'
     const isResizingEnd = isResizing && resizeEdge === 'end'
@@ -571,7 +578,14 @@ export function IntervalGrid({
   }
 
   // Render resize handles for badge view
-  const renderBadgeResizeHandles = (interval: any) => {
+  const renderBadgeResizeHandles = (
+    interval: TimelineInterval & {
+      startLeft: number
+      endLeft: number
+      width: number
+      isSelected: boolean
+    }
+  ) => {
     const isResizing = resizingIntervalId === interval.id
     const isResizingStart = isResizing && resizeEdge === 'start'
     const isResizingEnd = isResizing && resizeEdge === 'end'

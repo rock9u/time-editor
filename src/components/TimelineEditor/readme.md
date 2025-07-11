@@ -198,40 +198,46 @@ _ Close the dialog.
 ### 6. Interaction: Batch Editing (Toolbar & Context Menu)
 
 **6.1. Floating Toolbar (`src/components/TimelineEditor/TimelineToolbar.tsx`)**
-_ **Visibility:** Only visible when `selectedIntervalIds` is not empty.
-_ **Positioning:** Can be fixed at the top/bottom of the `TimelineEditor` or intelligently positioned near the selected intervals.
-_ **Components:** Use `shadcn/ui/button` with `lucide-react` icons.
-_ **Actions (Buttons):**
-_ **Copy:** `lucide-react/Copy` icon. On click: Deep clone the currently `selectedIntervals` and store them in a temporary `clipboard` state (within `TimelineEditor` or a dedicated context). Clear `selectedIntervalIds`.
-_ **Paste:** `lucide-react/ClipboardList` icon. On click:
-_ For each item in `clipboard`:
-_ Generate a _new unique `id`_.
-_ Create a new `startTime` and `endTime` by offsetting the original `startTime` and `endTime` by a small, fixed amount (e.g., 1 grid unit to the right or down, or 1 day/week). This prevents pasted items from perfectly overlapping original ones.
-_ Dispatch `ADD_INTERVAL` for each new interval.
-_ Clear `clipboard`.
-_ **Duplicate:** `lucide-react/CopyPlus` icon. On click: Similar to paste, but the source is the `selectedIntervals` themselves. Generate new IDs and offset them. Keep original selected. \* **Delete:** `lucide-react/Trash` icon. On click: Dispatch `DELETE_INTERVAL` action for all `selectedIntervalIds`. Clear `selectedIntervalIds`.
+
+- **Visibility:** Only visible when `selectedIntervalIds` is not empty.
+- **Positioning:** Can be fixed at the top/bottom of the `TimelineEditor` or intelligently positioned near the selected intervals.
+- **Components:** Use `shadcn/ui/button` with `lucide-react` icons.
+- **Actions (Buttons):**
+- **Copy:** `lucide-react/Copy` icon. On click: Deep clone the currently `selectedIntervals` and store them in a temporary `clipboard` state (within `TimelineEditor` or a dedicated context). Clear `selectedIntervalIds`.
+- **Paste:** `lucide-react/ClipboardList` icon. On click:
+- For each item in `clipboard`:
+- Generate a _new unique `id`_.
+- Create a new `startTime` and `endTime` by offsetting the original `startTime` and `endTime` by a small, fixed amount (e.g., 1 grid unit to the right or down, or 1 day/week). This prevents pasted items from perfectly overlapping original ones.
+- Dispatch `ADD_INTERVAL` for each new interval.
+- Clear `clipboard`.
+- **Duplicate:** `lucide-react/CopyPlus` icon. On click: Similar to paste, but the source is the `selectedIntervals` themselves. Generate new IDs and offset them. Keep original selected. \* **Delete:** `lucide-react/Trash` icon. On click: Dispatch `DELETE_INTERVAL` action for all `selectedIntervalIds`. Clear `selectedIntervalIds`.
+- `x2 (Double)`: Trigger Doubling action (if `selectedIntervals` exist), the duration is transforming into doubled total time span, each interval block is doubled in size, including empty duration within the selected region.
 
 **6.2. Keyboard Shortcuts**
-_ **Event Listener:** Implement a global `keydown` event listener on the `TimelineEditor` component using `useEffect` with cleanup.
-_ **Conditional Execution:** Only execute if focus is within the `TimelineEditor` or if no specific input field is focused.
-_ **Shortcuts:**
-_ `Cmd/Ctrl + C`: Trigger Copy action (if `selectedIntervals` exist).
-_ `Cmd/Ctrl + V`: Trigger Paste action (if `clipboard` is not empty).
-_ `Cmd/Ctrl + D`: Trigger Duplicate action (if `selectedIntervals` exist).
-_ `Delete` or `Backspace`: Trigger Delete action (if `selectedIntervals` exist).
-_ `Cmd/Ctrl + 1`: Trigger "Change Grid Interval" panel (see next section).
+
+- **Event Listener:** Implement a global `keydown` event listener on the `TimelineEditor` component using `useEffect` with cleanup.
+- **Conditional Execution:** Only execute if focus is within the `TimelineEditor` or if no specific input field is focused.
+- **Shortcuts:**
+- `Cmd/Ctrl + C`: Trigger Copy action (if `selectedIntervals` exist).
+- `Cmd/Ctrl + V`: Trigger Paste action (if `clipboard` is not empty).
+- `Cmd/Ctrl + D`: Trigger Duplicate action (if `selectedIntervals` exist).
+- `Cmd/Ctrl +Shift+ D`: Trigger Doubling action (if `selectedIntervals` exist), the duration is transforming into doubled total time span, each interval block is doubled in size, including empty duration within the selected region.
+- `Delete` or `Backspace`: Trigger Delete action (if `selectedIntervals` exist).
+- `Cmd/Ctrl + 1`: Trigger "Change Grid Interval" panel (see next section).
 
 **6.3. Context Menu (`shadcn/ui/context-menu`)**
-_ **Event Listener:** Attach `onContextMenu` (right-click) to the `IntervalGrid` background and optionally to individual interval badges.
-_ **Content:**
-_ `shadcn/ui/context-menu` items:
-_ "Copy" (enabled if `selectedIntervals` exist)
-_ "Paste" (enabled if `clipboard` is not empty)
-_ "Duplicate" (enabled if `selectedIntervals` exist)
-_ "Delete" (enabled if `selectedIntervals` exist)
-_ Separator
-_ "Change Grid Interval..." (always enabled)
-_ **Action Mapping:** Each menu item should dispatch the corresponding action as defined for the toolbar/keyboard shortcuts.
+
+- **Event Listener:** Attach `onContextMenu` (right-click) to the `IntervalGrid` background and optionally to individual interval badges.
+- **Content:**
+- `shadcn/ui/context-menu` items:
+- "Copy" (enabled if `selectedIntervals` exist)
+- "Paste" (enabled if `clipboard` is not empty)
+- "Duplicate" (enabled if `selectedIntervals` exist)
+- "x2 (Double)" (enabled if `selectedIntervals` exist)
+- "Delete" (enabled if `selectedIntervals` exist)
+- Separator
+- "Change Grid Interval..." (always enabled)
+- **Action Mapping:** Each menu item should dispatch the corresponding action as defined for the toolbar/keyboard shortcuts.
 
 ---
 
@@ -317,6 +323,8 @@ This detailed breakdown provides the engineering team with clear, actionable req
 6. we should add batch drag and drop after multiple elements are all select. right now only the single element will be moved
 7. after double clicking, a interval of 1 grid unit should always default placed, the rest of the drag increase behaviour should be the same
 8. the resize region should show indicator on hover. and it should allowed to be used without need to select it first.
+9. after clicking and dragging, attempting to just select the grid, with the very change the interval moves a whole grid a head. lets add a threshhold delta when we change the mode to "repositon". half of the current intervals' with maybe.
+10. need more info on toolbar's action, adding hover text for each icon.
 
 # Doc
 

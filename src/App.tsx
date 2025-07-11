@@ -7,9 +7,9 @@ function App() {
   return (
     <main className="items-center justify-center h-screen w-full min-w-screen">
       <h1 className="text-3xl font-bold underline">Timeline UI</h1>
-      <TimeEditor />
+      {/* <TimeEditor /> */}
       <TimelineEditor />
-      <IntervalGrid />
+      {/* <IntervalGrid /> */}
     </main>
   )
 }

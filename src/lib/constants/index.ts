@@ -48,14 +48,14 @@ export type IntervalColor = (typeof INTERVAL_COLORS)[number]
 
 // Keyboard shortcuts
 export const KEYBOARD_SHORTCUTS = {
-  COPY: ['Control', 'c'],
-  PASTE: ['Control', 'v'],
-  DUPLICATE: ['Control', 'd'],
-  DELETE: ['Delete'],
-  BACKSPACE: ['Backspace'],
-  GRID_SETTINGS: ['Control', '1'],
-  SELECT_ALL: ['Control', 'a'],
-  ESCAPE: ['Escape'],
+  COPY: 'Ctrl+C',
+  PASTE: 'Ctrl+V',
+  DUPLICATE: 'Ctrl+D',
+  DOUBLE: 'Ctrl+2',
+  HALF: 'Ctrl+1',
+  DELETE: 'Delete',
+  CLEAR_SELECTION: 'Escape',
+  GRID_SETTINGS: 'Ctrl+3',
 } as const
 
 // Enhanced mouse interaction constants
