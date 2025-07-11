@@ -1,25 +1,29 @@
-import React, { useMemo, useCallback, useState, useRef } from 'react'
 import { DateTime } from 'luxon'
-import type {
-  TimelineInterval,
-  GridSettings,
-  TimelineBounds,
-} from '../../types/timeline'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import {
-  timestampToPixels,
-  pixelsToTimestamp,
-  snapToGrid,
-  calculatePixelsPerMs,
-  intervalsOverlap,
-} from '../../lib/timeline-utils'
-import {
-  TIMELINE_CONSTANTS,
-  UI_CONSTANTS,
-  TIMELINE_BEHAVIOR,
-  TIMELINE_VIEW_MODES,
   BADGE_VIEW_CONSTANTS,
   MOUSE_CONSTANTS,
+  TIMELINE_BEHAVIOR,
+  TIMELINE_CONSTANTS,
+  TIMELINE_VIEW_MODES,
+  UI_CONSTANTS,
 } from '../../lib/constants'
+import {
+  calculatePixelsPerMs,
+  intervalsOverlap,
+  pixelsToTimestamp,
+  snapToGrid,
+  timestampToPixels,
+} from '../../lib/timeline-utils'
+import {
+  convertToLegacyInterval,
+  getIntervalDuration,
+} from '../../lib/timeline-utils-v2'
+import type {
+  GridSettings,
+  TimelineBounds,
+  TimelineInterval,
+} from '../../types/timeline'
 
 interface IntervalGridProps {
   intervals: TimelineInterval[]
@@ -498,18 +502,20 @@ export function IntervalGrid({
   // Calculate interval positions for both grid and badge views
   const intervalElements = useMemo(() => {
     return intervals.map(interval => {
+      // Convert V2 interval to legacy format for display
+      const legacyInterval = convertToLegacyInterval(interval)
+
       const startLeft = timestampToPixels(
-        interval.startTime,
+        legacyInterval.startTime,
         timelineBounds.minDate,
         gridDimensions.pixelsPerMs
       )
       const endLeft = timestampToPixels(
-        interval.endTime,
+        legacyInterval.endTime,
         timelineBounds.minDate,
         gridDimensions.pixelsPerMs
       )
-      const width =
-        (interval.endTime - interval.startTime) * gridDimensions.pixelsPerMs
+      const width = getIntervalDuration(interval) * gridDimensions.pixelsPerMs
       const isSelected = selectedIntervalIds.has(interval.id)
 
       return {

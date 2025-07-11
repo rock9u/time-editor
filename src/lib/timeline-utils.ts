@@ -107,6 +107,9 @@ export function calculatePixelsPerMs(
 ): number {
   const { unit, value } = gridSettings
   let millisecondsPerUnit: number
+  const now = DateTime.now()
+  const nextMonth = now.plus({ months: value })
+  const nextYear = now.plus({ years: value })
 
   switch (unit) {
     case 'day':
@@ -114,13 +117,10 @@ export function calculatePixelsPerMs(
       break
     case 'month':
       // Use Luxon for accurate month calculations
-      const now = DateTime.now()
-      const nextMonth = now.plus({ months: value })
       millisecondsPerUnit = nextMonth.diff(now).toMillis()
       break
     case 'year':
       // Use Luxon for accurate year calculations
-      const nextYear = now.plus({ years: value })
       millisecondsPerUnit = nextYear.diff(now).toMillis()
       break
     default:
@@ -136,15 +136,15 @@ export function calculatePixelsPerMs(
 export function getMillisecondsPerGridUnit(gridSettings: GridSettings): number {
   const { unit, value } = gridSettings
   const now = DateTime.now()
+  const nextMonth = now.plus({ months: value })
+  const nextYear = now.plus({ years: value })
 
   switch (unit) {
     case 'day':
       return value * 24 * 60 * 60 * 1000
     case 'month':
-      const nextMonth = now.plus({ months: value })
       return nextMonth.diff(now).toMillis()
     case 'year':
-      const nextYear = now.plus({ years: value })
       return nextYear.diff(now).toMillis()
     default:
       return 24 * 60 * 60 * 1000

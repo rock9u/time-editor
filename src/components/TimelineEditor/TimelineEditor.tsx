@@ -23,24 +23,30 @@ import { IntervalGrid } from './IntervalGrid'
 import { TimelineContextMenu } from './TimelineContextMenu'
 import { TimelineToolbar } from './TimelineToolbar'
 import { useTimelineReducer } from './useTimelineReducer'
+import { useTimeline } from '../../contexts/TimelineContext'
+import { createIntervalV2 } from '../../lib/timeline-utils-v2'
 
 export function TimelineEditor() {
   const {
-    intervals,
-    selectedIntervalIds,
+    state,
     addInterval,
-    deleteInterval,
     updateInterval,
-    clearSelectedIntervals,
-    toggleIntervalSelection,
-    getSelectedIntervals,
-    setSelectedIntervals,
-  } = useTimelineReducer()
+    deleteInterval,
+    selectInterval,
+    clearSelection,
+    setGridSettings,
+    copyIntervals,
+    selectMultipleIntervals,
+    pasteIntervals,
+    duplicateIntervals,
+    getIntervalEndTime,
+    moveInterval,
+    resizeInterval,
+  } = useTimeline()
+
+  const { intervals, selectedIntervalIds, gridSettings, clipboard } = state
 
   // Grid settings state
-  const [gridSettings, setGridSettings] = useState<GridSettings>(
-    DEFAULT_GRID_SETTINGS
-  )
   const [timelineBounds] = useState<TimelineBounds>(DEFAULT_TIMELINE_BOUNDS)
 
   // Overlap prevention state
@@ -58,9 +64,6 @@ export function TimelineEditor() {
     useState<TimelineInterval | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isGridSettingsOpen, setIsGridSettingsOpen] = useState(false)
-
-  // Clipboard state
-  const [clipboard, setClipboard] = useState<TimelineInterval[]>([])
 
   // Enhanced keyboard shortcuts with new mappings
   useEffect(() => {
@@ -108,7 +111,7 @@ export function TimelineEditor() {
         handleDelete()
       } else if (e.key === 'Escape') {
         e.preventDefault()
-        clearSelectedIntervals()
+        clearSelection()
       }
     }
 
@@ -118,17 +121,19 @@ export function TimelineEditor() {
 
   // Copy functionality
   const handleCopy = useCallback(() => {
-    const selectedIntervals = getSelectedIntervals()
+    const selectedIntervals = state.intervals.filter(interval =>
+      selectedIntervalIds.has(interval.id)
+    )
     if (selectedIntervals.length > 0) {
       // Deep clone the selected intervals
       const clonedIntervals = selectedIntervals.map(interval => ({
         ...interval,
         id: generateUUID(), // Generate new IDs for clipboard
       }))
-      setClipboard(clonedIntervals)
-      clearSelectedIntervals()
+      copyIntervals(clonedIntervals)
+      clearSelection()
     }
-  }, [getSelectedIntervals, clearSelectedIntervals])
+  }, [selectedIntervalIds, state.intervals, clearSelection])
 
   // Paste functionality
   const handlePaste = useCallback(() => {
@@ -147,12 +152,14 @@ export function TimelineEditor() {
       addInterval(newInterval)
     })
 
-    setClipboard([])
+    copyIntervals([])
   }, [clipboard, gridSettings, addInterval])
 
   // Duplicate functionality
   const handleDuplicate = useCallback(() => {
-    const selectedIntervals = getSelectedIntervals()
+    const selectedIntervals = state.intervals.filter(interval =>
+      selectedIntervalIds.has(interval.id)
+    )
     if (selectedIntervals.length === 0) return
 
     // Calculate offset to prevent perfect overlap
@@ -167,11 +174,13 @@ export function TimelineEditor() {
       }
       addInterval(newInterval)
     })
-  }, [getSelectedIntervals, gridSettings, addInterval])
+  }, [selectedIntervalIds, gridSettings, addInterval, state.intervals])
 
   const handleMultiply = useCallback(
     (factor: number) => {
-      const selectedIntervals = getSelectedIntervals()
+      const selectedIntervals = state.intervals.filter(interval =>
+        selectedIntervalIds.has(interval.id)
+      )
       if (selectedIntervals.length === 0) return
 
       // Find the overall time span of selected intervals
@@ -190,7 +199,7 @@ export function TimelineEditor() {
         })
       })
     },
-    [getSelectedIntervals, updateInterval]
+    [selectedIntervalIds, updateInterval, state.intervals]
   )
 
   // Double functionality
@@ -244,19 +253,42 @@ export function TimelineEditor() {
 
   const handleIntervalCreate = (startTime: number, endTime: number) => {
     const colorIndex = intervals.length % INTERVAL_COLORS.length
-    const newInterval = {
-      id: generateUUID(),
+    const duration = endTime - startTime
+
+    // Calculate grid amount based on duration and current grid settings
+    let gridAmount = 1
+    const startDateTime = DateTime.fromMillis(startTime)
+    const endDateTime = DateTime.fromMillis(endTime)
+    const startYear = DateTime.fromMillis(startTime)
+    const endYear = DateTime.fromMillis(endTime)
+    switch (gridSettings.unit) {
+      case 'day':
+        gridAmount = Math.round(duration / (24 * 60 * 60 * 1000))
+        break
+      case 'month':
+        gridAmount = Math.round(
+          endDateTime.diff(startDateTime, 'months').months
+        )
+        break
+      case 'year':
+        gridAmount = Math.round(endYear.diff(startYear, 'years').years)
+        break
+    }
+
+    const newInterval = createIntervalV2(
       startTime,
-      endTime,
-      metadata: {
+      gridSettings.unit,
+      Math.max(1, gridAmount),
+      {
         label: `New Interval ${intervals.length + 1}`,
         color: INTERVAL_COLORS[colorIndex],
         description: `Created from ${formatTimestamp(
           startTime
         )} to ${formatTimestamp(endTime)}`,
         tags: ['created'],
-      },
-    }
+      }
+    )
+
     addInterval(newInterval)
   }
 
@@ -270,7 +302,7 @@ export function TimelineEditor() {
 
     // Select all overlapping intervals
     const intervalIds = overlappingIntervals.map(interval => interval.id)
-    setSelectedIntervals(intervalIds)
+    selectMultipleIntervals(intervalIds)
   }
 
   const handleIntervalUpdate = (
@@ -303,7 +335,9 @@ export function TimelineEditor() {
 
   return (
     <TimelineContextMenu
-      selectedIntervals={getSelectedIntervals()}
+      selectedIntervals={state.intervals.filter(interval =>
+        selectedIntervalIds.has(interval.id)
+      )}
       clipboard={clipboard}
       onCopy={handleCopy}
       onPaste={handlePaste}
@@ -323,7 +357,7 @@ export function TimelineEditor() {
             Add Test Interval
           </button>
           <button
-            onClick={clearSelectedIntervals}
+            onClick={clearSelection}
             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
             Clear Selection
           </button>
@@ -407,7 +441,7 @@ export function TimelineEditor() {
               selectedIntervalIds={selectedIntervalIds}
               gridSettings={gridSettings}
               timelineBounds={timelineBounds}
-              onIntervalSelect={toggleIntervalSelection}
+              onIntervalSelect={selectInterval}
               onIntervalCreate={handleIntervalCreate}
               onIntervalUpdate={handleIntervalUpdate}
               onIntervalSelectRange={handleIntervalSelectRange}
@@ -436,7 +470,7 @@ export function TimelineEditor() {
                 borderRadius: `${UI_CONSTANTS.INTERVAL_BORDER_RADIUS}px`,
                 minHeight: `${UI_CONSTANTS.INTERVAL_HEIGHT}px`,
               }}
-              onClick={() => toggleIntervalSelection(interval.id)}>
+              onClick={() => selectInterval(interval.id)}>
               <div className="flex items-center gap-2">
                 {interval.metadata?.color && (
                   <div
@@ -476,11 +510,13 @@ export function TimelineEditor() {
           <div className="mt-4 p-3 bg-blue-50 rounded">
             <h4 className="font-semibold">Selected Intervals:</h4>
             <ul className="mt-2 space-y-1">
-              {getSelectedIntervals().map(interval => (
-                <li key={interval.id} className="text-sm">
-                  {interval.metadata?.label || DEFAULT_METADATA.LABEL}
-                </li>
-              ))}
+              {state.intervals
+                .filter(interval => selectedIntervalIds.has(interval.id))
+                .map(interval => (
+                  <li key={interval.id} className="text-sm">
+                    {interval.metadata?.label || DEFAULT_METADATA.LABEL}
+                  </li>
+                ))}
             </ul>
           </div>
         )}
@@ -495,7 +531,9 @@ export function TimelineEditor() {
 
         {/* Floating Toolbar */}
         <TimelineToolbar
-          selectedIntervals={getSelectedIntervals()}
+          selectedIntervals={state.intervals.filter(interval =>
+            selectedIntervalIds.has(interval.id)
+          )}
           clipboard={clipboard}
           onCopy={handleCopy}
           onPaste={handlePaste}
@@ -503,7 +541,7 @@ export function TimelineEditor() {
           onDelete={handleDelete}
           onDouble={handleDouble}
           onHalf={handleHalf}
-          onClearSelection={clearSelectedIntervals}
+          onClearSelection={clearSelection}
         />
 
         {/* Grid Settings Panel */}

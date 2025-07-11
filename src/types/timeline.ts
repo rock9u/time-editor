@@ -1,14 +1,33 @@
-export interface TimelineInterval {
-  id: string // Unique identifier (e.g., UUID v4)
+import React, { createContext, useContext, useReducer, ReactNode } from 'react'
+import { DateTime } from 'luxon'
+import type { GridSettings, GridIntervalUnit } from '../types/timeline'
+
+// New interval structure using start + grid + amount
+export interface TimelineIntervalV2 {
+  id: string
   startTime: number // Unix timestamp in milliseconds
-  endTime: number // Unix timestamp in milliseconds
+  gridUnit: GridIntervalUnit // 'day', 'month', 'year'
+  gridAmount: number // How many grid units this interval spans
   metadata?: {
-    // Optional metadata for future expansion (e.g., label, color)
     label?: string
-    color?: string // Hex color code
+    color?: string
     description?: string
     tags?: string[]
-    [key: string]: unknown
+    [key: string]: any
+  }
+}
+
+// Legacy interface for backward compatibility
+export interface TimelineInterval {
+  id: string
+  startTime: number
+  endTime: number
+  metadata?: {
+    label?: string
+    color?: string
+    description?: string
+    tags?: string[]
+    [key: string]: any
   }
 }
 
