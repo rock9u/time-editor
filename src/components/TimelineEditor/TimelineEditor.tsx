@@ -430,16 +430,6 @@ export function TimelineEditor() {
           </div>
         </div>
 
-        {/* clipboard */}
-        <h4 className="font-bold">Clipboard:</h4>
-        <ul className="mt-2 space-y-1">
-          {clipboard.map(interval => (
-            <li key={interval.id} className="text-sm">
-              {interval.metadata?.label || DEFAULT_METADATA.LABEL}
-            </li>
-          ))}
-        </ul>
-
         {/* Intervals List */}
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">
@@ -450,7 +440,7 @@ export function TimelineEditor() {
               key={interval.id}
               className={`p-3 border rounded cursor-pointer ${
                 selectedIntervalIds.has(interval.id)
-                  ? 'border-blue-500 bg-blue-50'
+                  ? 'border-blue-500 bg-background'
                   : 'border-gray-300'
               }`}
               style={{
@@ -482,7 +472,7 @@ export function TimelineEditor() {
                   {interval.metadata.tags.map(tag => (
                     <span
                       key={tag}
-                      className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+                      className="px-2 py-1 text-xs bg-background text-foreground rounded">
                       {tag}
                     </span>
                   ))}
@@ -491,22 +481,37 @@ export function TimelineEditor() {
             </div>
           ))}
         </div>
-
-        {/* Selected Intervals */}
-        {selectedIntervalIds.size > 0 && (
-          <div className="mt-4 p-3 bg-blue-50 rounded">
-            <h4 className="font-semibold">Selected Intervals:</h4>
-            <ul className="mt-2 space-y-1">
-              {state.intervals
-                .filter(interval => selectedIntervalIds.has(interval.id))
-                .map(interval => (
-                  <li key={interval.id} className="text-sm">
-                    {interval.metadata?.label || DEFAULT_METADATA.LABEL}
-                  </li>
-                ))}
-            </ul>
-          </div>
-        )}
+        <div className="flex gap-4">
+          {/* Selected Intervals */}
+          {selectedIntervalIds.size > 0 && (
+            <div className="mt-4 p-3 bg-background rounded">
+              <h4 className="font-semibold">Selected Intervals:</h4>
+              <ul className="mt-2 space-y-1">
+                {state.intervals
+                  .filter(interval => selectedIntervalIds.has(interval.id))
+                  .map(interval => (
+                    <li key={interval.id} className="text-sm">
+                      {interval.metadata?.label || DEFAULT_METADATA.LABEL}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+          {clipboard.length > 0 && (
+            <div className="mt-4 p-3 bg-background rounded">
+              <h4 className="font-semibold">Clipboard:</h4>
+              <ul className="mt-2 space-y-1">
+                {state.intervals
+                  .filter(interval => selectedIntervalIds.has(interval.id))
+                  .map(interval => (
+                    <li key={interval.id} className="text-sm">
+                      {interval.metadata?.label || DEFAULT_METADATA.LABEL}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+        </div>
 
         {/* Edit Dialog */}
         <IntervalEditDialog
