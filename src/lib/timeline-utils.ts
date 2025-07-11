@@ -5,6 +5,7 @@ import type {
   TimelineBounds,
   GridIntervalUnit,
 } from '../types/timeline'
+import { TIMELINE_CONSTANTS, MOUSE_CONSTANTS } from '../lib/constants'
 
 /**
  * Convert timestamp to pixel position
@@ -113,22 +114,20 @@ export function formatTimestamp(
 }
 
 /**
- * Get duration in human readable format
+ * Get duration text between two timestamps
  */
 export function getDurationText(startTime: number, endTime: number): string {
-  const duration = DateTime.fromMillis(endTime).diff(
-    DateTime.fromMillis(startTime)
-  )
+  const duration = endTime - startTime
+  const hours = Math.floor(duration / (1000 * 60 * 60))
+  const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((duration % (1000 * 60)) / 1000)
 
-  if (duration.as('days') >= 1) {
-    return `${Math.round(duration.as('days'))} days`
-  } else if (duration.as('hours') >= 1) {
-    return `${Math.round(duration.as('hours'))} hours`
-  } else if (duration.as('minutes') >= 1) {
-    return `${Math.round(duration.as('minutes'))} minutes`
-  } else {
-    return `${Math.round(duration.as('seconds'))} seconds`
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`
   }
+  return `${seconds}s`
 }
 
 /**
@@ -213,4 +212,66 @@ export function getOverlappingIntervals(
     existing =>
       existing.id !== interval.id && intervalsOverlap(interval, existing)
   )
+}
+
+/**
+ * Calculate the visual feedback for interval creation
+ */
+export function calculateCreationMarquee(
+  startTime: number,
+  endTime: number,
+  timelineBounds: TimelineBounds,
+  pixelsPerMs: number
+): {
+  left: number
+  width: number
+  isValid: boolean
+} {
+  const startLeft = timestampToPixels(
+    startTime,
+    timelineBounds.minDate,
+    pixelsPerMs
+  )
+  const endLeft = timestampToPixels(
+    endTime,
+    timelineBounds.minDate,
+    pixelsPerMs
+  )
+
+  return {
+    left: Math.min(startLeft, endLeft),
+    width: Math.abs(endLeft - startLeft),
+    isValid: endTime - startTime >= TIMELINE_CONSTANTS.MIN_INTERVAL_DURATION,
+  }
+}
+
+/**
+ * Check if a drag operation is valid
+ */
+export function isValidDrag(
+  startX: number,
+  currentX: number,
+  threshold: number = MOUSE_CONSTANTS.DRAG_THRESHOLD
+): boolean {
+  return Math.abs(currentX - startX) > threshold
+}
+
+/**
+ * Get the duration text for creation feedback
+ */
+export function getCreationDurationText(
+  startTime: number,
+  endTime: number
+): string {
+  const duration = Math.abs(endTime - startTime)
+
+  if (duration < 1000) {
+    return `${duration}ms`
+  } else if (duration < 60000) {
+    return `${Math.round(duration / 1000)}s`
+  } else if (duration < 3600000) {
+    return `${Math.round(duration / 60000)}m`
+  } else {
+    return `${Math.round(duration / 3600000)}h`
+  }
 }

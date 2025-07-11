@@ -58,11 +58,22 @@ export const KEYBOARD_SHORTCUTS = {
   ESCAPE: ['Escape'],
 } as const
 
-// Mouse interaction constants
+// Enhanced mouse interaction constants
 export const MOUSE_CONSTANTS = {
   DOUBLE_CLICK_DELAY: 300, // milliseconds
   DRAG_THRESHOLD: 5, // pixels
   RESIZE_HANDLE_WIDTH: 8, // pixels
+  MIN_DRAG_DISTANCE: 10, // pixels
+  CREATION_FEEDBACK_DELAY: 100, // milliseconds
+} as const
+
+// Creation feedback constants
+export const CREATION_CONSTANTS = {
+  MARQUEE_OPACITY: 0.3,
+  VALID_COLOR: '#3B82F6', // blue
+  INVALID_COLOR: '#EF4444', // red
+  HANDLE_SIZE: 4, // pixels
+  LABEL_OFFSET: 20, // pixels
 } as const
 
 // Grid calculation constants
@@ -189,4 +200,14 @@ export const BADGE_VIEW_CONSTANTS = {
   HOVER_OPACITY: 1.0,
   NORMAL_OPACITY: 0.5,
   CONNECTION_OPACITY: 0.3,
+} as const
+
+// Selection styling constants
+export const SELECTION_CONSTANTS = {
+  RING_COLOR: 'ring-white',
+  RING_OFFSET: 'ring-offset-2',
+  SHADOW: 'shadow-lg',
+  BRIGHTNESS: 'brightness(1.2)',
+  DROP_SHADOW: 'drop-shadow(0 0 4px rgba(255,255,255,0.8))',
+  LINE_DROP_SHADOW: 'drop-shadow(0 0 2px rgba(255,255,255,0.6))',
 } as const

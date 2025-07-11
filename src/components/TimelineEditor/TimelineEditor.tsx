@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useTimelineReducer } from './useTimelineReducer'
 import { IntervalGrid } from './IntervalGrid'
+import { IntervalEditDialog } from './IntervalEditDialog'
 import { generateUUID } from '../../lib/utils'
 import { formatTimestamp, getDurationText } from '../../lib/timeline-utils'
 import {
@@ -17,6 +18,7 @@ import type {
   GridSettings,
   TimelineBounds,
   GridIntervalUnit,
+  TimelineInterval,
 } from '../../types/timeline'
 
 export function TimelineEditor() {
@@ -25,9 +27,11 @@ export function TimelineEditor() {
     selectedIntervalIds,
     addInterval,
     deleteInterval,
+    updateInterval,
     clearSelectedIntervals,
     toggleIntervalSelection,
     getSelectedIntervals,
+    setSelectedIntervals,
   } = useTimelineReducer()
 
   // Grid settings state
@@ -45,6 +49,11 @@ export function TimelineEditor() {
   const [viewMode, setViewMode] = useState<'grid' | 'badge'>(
     TIMELINE_VIEW_MODES.GRID
   )
+
+  // Dialog state
+  const [editingInterval, setEditingInterval] =
+    useState<TimelineInterval | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   const handleAddTestInterval = () => {
     const now = Date.now()
@@ -85,6 +94,43 @@ export function TimelineEditor() {
       },
     }
     addInterval(newInterval)
+  }
+
+  const handleIntervalSelectRange = (startTime: number, endTime: number) => {
+    // Find intervals that overlap with the selection range
+    const overlappingIntervals = intervals.filter(interval => {
+      const intervalStart = Math.max(interval.startTime, startTime)
+      const intervalEnd = Math.min(interval.endTime, endTime)
+      return intervalStart < intervalEnd
+    })
+
+    // Select all overlapping intervals
+    const intervalIds = overlappingIntervals.map(interval => interval.id)
+    setSelectedIntervals(intervalIds)
+  }
+
+  const handleIntervalUpdate = (
+    id: string,
+    updates: Partial<TimelineInterval>
+  ) => {
+    updateInterval(id, updates)
+  }
+
+  const handleIntervalEdit = (interval: TimelineInterval) => {
+    setEditingInterval(interval)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleEditDialogClose = () => {
+    setIsEditDialogOpen(false)
+    setEditingInterval(null)
+  }
+
+  const handleEditDialogSave = (
+    id: string,
+    updates: Partial<TimelineInterval>
+  ) => {
+    updateInterval(id, updates)
   }
 
   return (
@@ -185,6 +231,9 @@ export function TimelineEditor() {
             timelineBounds={timelineBounds}
             onIntervalSelect={toggleIntervalSelection}
             onIntervalCreate={handleIntervalCreate}
+            onIntervalUpdate={handleIntervalUpdate}
+            onIntervalSelectRange={handleIntervalSelectRange}
+            onIntervalEdit={handleIntervalEdit}
             preventOverlap={preventOverlap}
             viewMode={viewMode}
             className="min-w-full"
@@ -256,6 +305,14 @@ export function TimelineEditor() {
           </ul>
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <IntervalEditDialog
+        interval={editingInterval}
+        isOpen={isEditDialogOpen}
+        onClose={handleEditDialogClose}
+        onSave={handleEditDialogSave}
+      />
     </div>
   )
 }
