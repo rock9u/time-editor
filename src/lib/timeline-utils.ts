@@ -503,3 +503,27 @@ export function getPreviousGridLine(
 
   return prevDateTime.toMillis()
 }
+
+/**
+ * Find the nearest grid line to a given timestamp
+ * This is used to determine which grid line is closest when double-clicking
+ */
+export function findNearestGridLine(
+  timestamp: number,
+  gridSettings: GridSettings
+): number {
+  const { unit, value } = gridSettings
+
+  // Get the current grid unit boundaries
+  const currentGridStart = snapToGrid(timestamp, gridSettings)
+  const currentGridEnd = DateTime.fromMillis(currentGridStart)
+    .plus({ [unit]: value })
+    .toMillis()
+
+  // Calculate distances to both boundaries
+  const distanceToStart = Math.abs(timestamp - currentGridStart)
+  const distanceToEnd = Math.abs(timestamp - currentGridEnd)
+
+  // Return the closer boundary
+  return distanceToStart <= distanceToEnd ? currentGridStart : currentGridEnd
+}

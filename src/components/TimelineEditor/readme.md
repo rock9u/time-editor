@@ -315,7 +315,7 @@ This detailed breakdown provides the engineering team with clear, actionable req
 
 ### Bugs:
 
-1. double clicking and dragging always lands on the left side of the grid when creating no matter how close is it to the right grid line. it should start with chose the right grid line when it's close. also after double clicking, the visual indicator should already land in the grid line instead of where user selects. this will reduce the confusion.
+1. [x] double clicking and dragging always lands on the left side of the grid when creating no matter how close is it to the right grid line. it should start with chose the right grid line when it's close. also after double clicking, the visual indicator should already land in the grid line instead of where user selects. this will reduce the confusion.
 2. when drag an drop timelines, and the grid is set to month. setup a full june interval, a full july interval. move both to feb and march. July to march would not work because the interval in terms of days are 30 days. i think we should refactor the state management a bit. right now we are storing everything in start/end datetime. we should do start datetime, then use grid type and gird amount to reduce bugs like this.
 3. [x] missing indication of selected intervals/badge block. we should add some white border and filter to them to show that they are selected.
 4. [x] when drag and drop, the badge and interval box are not following mouse fully. this needs to be more snappy. we should use dnd kit library to implement drag and drop for convenience.
