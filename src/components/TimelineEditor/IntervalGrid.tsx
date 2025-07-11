@@ -1,14 +1,5 @@
 import React, { useMemo, useCallback, useState, useRef } from 'react'
 import { DateTime } from 'luxon'
-import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core'
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
 import type {
   TimelineInterval,
   GridSettings,
@@ -59,16 +50,6 @@ export function IntervalGrid({
   preventOverlap = TIMELINE_BEHAVIOR.PREVENT_OVERLAP,
   viewMode = TIMELINE_VIEW_MODES.GRID,
 }: IntervalGridProps) {
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor)
-  )
-
   // Calculate grid dimensions
   const gridDimensions = useMemo(() => {
     const pixelsPerGridUnit = TIMELINE_CONSTANTS.DEFAULT_PIXELS_PER_GRID_UNIT
@@ -141,7 +122,7 @@ export function IntervalGrid({
 
   // Enhanced interaction state
   const [interactionMode, setInteractionMode] = useState<
-    'none' | 'creating' | 'selecting'
+    'none' | 'creating' | 'selecting' | 'resizing'
   >('none')
   const [interactionStart, setInteractionStart] = useState<number | null>(null)
   const [interactionEnd, setInteractionEnd] = useState<number | null>(null)
@@ -149,7 +130,7 @@ export function IntervalGrid({
     left: number
     width: number
     isValid: boolean
-    mode: 'creating' | 'selecting'
+    mode: 'creating' | 'selecting' | 'resizing'
   } | null>(null)
 
   // Simple drag state
@@ -158,6 +139,14 @@ export function IntervalGrid({
   )
   const [dragStartX, setDragStartX] = useState<number | null>(null)
   const [dragStartTime, setDragStartTime] = useState<number | null>(null)
+
+  // Resize state
+  const [resizingIntervalId, setResizingIntervalId] = useState<string | null>(
+    null
+  )
+  const [resizeEdge, setResizeEdge] = useState<'start' | 'end' | null>(null)
+  const [resizeStartX, setResizeStartX] = useState<number | null>(null)
+  const [resizeStartTime, setResizeStartTime] = useState<number | null>(null)
 
   // Track mouse position and drag state
   const [isDragging, setIsDragging] = useState(false)
@@ -245,6 +234,31 @@ export function IntervalGrid({
     []
   )
 
+  // Handle resize start
+  const handleResizeMouseDown = useCallback(
+    (
+      e: React.MouseEvent,
+      interval: TimelineInterval,
+      edge: 'start' | 'end'
+    ) => {
+      e.stopPropagation()
+
+      const rect = gridRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const x = e.clientX - rect.left
+      setResizingIntervalId(interval.id)
+      setResizeEdge(edge)
+      setResizeStartX(x)
+      setResizeStartTime(
+        edge === 'start' ? interval.startTime : interval.endTime
+      )
+      setInteractionMode('resizing')
+      setIsDragging(true)
+    },
+    []
+  )
+
   // Enhanced mouse move handler
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
@@ -253,7 +267,54 @@ export function IntervalGrid({
       const rect = gridRef.current.getBoundingClientRect()
       const x = e.clientX - rect.left
 
-      if (draggedIntervalId && dragStartX !== null && dragStartTime !== null) {
+      if (
+        resizingIntervalId &&
+        resizeEdge &&
+        resizeStartX !== null &&
+        resizeStartTime !== null
+      ) {
+        // Handle interval resizing
+        const deltaX = x - resizeStartX
+        const deltaTime = deltaX / gridDimensions.pixelsPerMs
+        const newTime = resizeStartTime + deltaTime
+
+        // Snap to grid
+        const snappedTime = snapToGrid(newTime, gridSettings)
+        const interval = intervals.find(i => i.id === resizingIntervalId)
+
+        if (interval) {
+          let newStartTime = interval.startTime
+          let newEndTime = interval.endTime
+
+          if (resizeEdge === 'start') {
+            newStartTime = snappedTime
+            // Ensure start time is before end time
+            if (newStartTime >= interval.endTime) {
+              newStartTime =
+                interval.endTime - TIMELINE_CONSTANTS.MIN_INTERVAL_DURATION
+            }
+          } else {
+            newEndTime = snappedTime
+            // Ensure end time is after start time
+            if (newEndTime <= interval.startTime) {
+              newEndTime =
+                interval.startTime + TIMELINE_CONSTANTS.MIN_INTERVAL_DURATION
+            }
+          }
+
+          // Check for overlap (excluding the resized interval)
+          if (!wouldOverlap(newStartTime, newEndTime, resizingIntervalId)) {
+            onIntervalUpdate?.(resizingIntervalId, {
+              startTime: newStartTime,
+              endTime: newEndTime,
+            })
+          }
+        }
+      } else if (
+        draggedIntervalId &&
+        dragStartX !== null &&
+        dragStartTime !== null
+      ) {
         // Handle interval dragging
         const deltaX = x - dragStartX
         const deltaTime = deltaX / gridDimensions.pixelsPerMs
@@ -325,6 +386,10 @@ export function IntervalGrid({
       }
     },
     [
+      resizingIntervalId,
+      resizeEdge,
+      resizeStartX,
+      resizeStartTime,
       draggedIntervalId,
       dragStartX,
       dragStartTime,
@@ -341,9 +406,18 @@ export function IntervalGrid({
 
   // Enhanced mouse up handler
   const handleMouseUp = useCallback(() => {
-    if (interactionMode === 'none' && !draggedIntervalId) return
+    if (interactionMode === 'none' && !draggedIntervalId && !resizingIntervalId)
+      return
 
-    if (draggedIntervalId) {
+    if (resizingIntervalId) {
+      // Handle resize end - already handled in mouse move
+      setResizingIntervalId(null)
+      setResizeEdge(null)
+      setResizeStartX(null)
+      setResizeStartTime(null)
+      setIsDragging(false)
+      setInteractionMode('none')
+    } else if (draggedIntervalId) {
       // Handle interval drop - already handled in mouse move
       setDraggedIntervalId(null)
       setDragStartX(null)
@@ -386,6 +460,7 @@ export function IntervalGrid({
   }, [
     interactionMode,
     draggedIntervalId,
+    resizingIntervalId,
     interactionStart,
     interactionEnd,
     isDragging,
@@ -396,7 +471,7 @@ export function IntervalGrid({
 
   // Handle mouse leave to cancel interaction
   const handleMouseLeave = useCallback(() => {
-    if (interactionMode !== 'none' || draggedIntervalId) {
+    if (interactionMode !== 'none' || draggedIntervalId || resizingIntervalId) {
       setInteractionMode('none')
       setIsDragging(false)
       setInteractionStart(null)
@@ -405,8 +480,12 @@ export function IntervalGrid({
       setDragStartX(null)
       setDraggedIntervalId(null)
       setDragStartTime(null)
+      setResizingIntervalId(null)
+      setResizeEdge(null)
+      setResizeStartX(null)
+      setResizeStartTime(null)
     }
-  }, [interactionMode, draggedIntervalId])
+  }, [interactionMode, draggedIntervalId, resizingIntervalId])
 
   // Handle double-click for editing
   const handleIntervalDoubleClick = useCallback(
@@ -453,6 +532,82 @@ export function IntervalGrid({
     null
   )
 
+  // Render resize handles for grid view
+  const renderGridResizeHandles = (interval: any) => {
+    const isResizing = resizingIntervalId === interval.id
+    const isResizingStart = isResizing && resizeEdge === 'start'
+    const isResizingEnd = isResizing && resizeEdge === 'end'
+
+    return (
+      <>
+        {/* Start resize handle */}
+        <div
+          className={`absolute top-0 bottom-0 w-1 cursor-ew-resize transition-all ${
+            isResizingStart
+              ? 'bg-white shadow-lg'
+              : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+          }`}
+          style={{
+            left: '0px',
+            zIndex: isResizingStart ? 20 : 10,
+          }}
+          onMouseDown={e => handleResizeMouseDown(e, interval, 'start')}
+        />
+        {/* End resize handle */}
+        <div
+          className={`absolute top-0 bottom-0 w-1 cursor-ew-resize transition-all ${
+            isResizingEnd
+              ? 'bg-white shadow-lg'
+              : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+          }`}
+          style={{
+            right: '0px',
+            zIndex: isResizingEnd ? 20 : 10,
+          }}
+          onMouseDown={e => handleResizeMouseDown(e, interval, 'end')}
+        />
+      </>
+    )
+  }
+
+  // Render resize handles for badge view
+  const renderBadgeResizeHandles = (interval: any) => {
+    const isResizing = resizingIntervalId === interval.id
+    const isResizingStart = isResizing && resizeEdge === 'start'
+    const isResizingEnd = isResizing && resizeEdge === 'end'
+
+    return (
+      <>
+        {/* Start resize handle */}
+        <div
+          className={`absolute top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full cursor-ew-resize transition-all ${
+            isResizingStart
+              ? 'bg-white shadow-lg ring-2 ring-blue-500'
+              : 'bg-white bg-opacity-75 hover:bg-opacity-100 hover:ring-1 hover:ring-blue-300'
+          }`}
+          style={{
+            left: `${interval.startLeft - 4}px`,
+            zIndex: isResizingStart ? 20 : 10,
+          }}
+          onMouseDown={e => handleResizeMouseDown(e, interval, 'start')}
+        />
+        {/* End resize handle */}
+        <div
+          className={`absolute top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full cursor-ew-resize transition-all ${
+            isResizingEnd
+              ? 'bg-white shadow-lg ring-2 ring-blue-500'
+              : 'bg-white bg-opacity-75 hover:bg-opacity-100 hover:ring-1 hover:ring-blue-300'
+          }`}
+          style={{
+            left: `${interval.endLeft - 4}px`,
+            zIndex: isResizingEnd ? 20 : 10,
+          }}
+          onMouseDown={e => handleResizeMouseDown(e, interval, 'end')}
+        />
+      </>
+    )
+  }
+
   return (
     <div className={`relative ${className}`}>
       {/* Grid Container */}
@@ -495,6 +650,7 @@ export function IntervalGrid({
           const isHovered = hoveredIntervalId === interval.id
           const isSelected = selectedIntervalIds.has(interval.id)
           const isBeingDragged = draggedIntervalId === interval.id
+          const isBeingResized = resizingIntervalId === interval.id
           const color = interval.metadata?.color || '#3B82F6'
 
           if (viewMode === 'badge') {
@@ -502,7 +658,7 @@ export function IntervalGrid({
               <div
                 key={interval.id}
                 className={`absolute top-8 bottom-2 cursor-move ${
-                  isBeingDragged ? 'z-50' : ''
+                  isBeingDragged || isBeingResized ? 'z-50' : ''
                 }`}
                 onMouseEnter={() => setHoveredIntervalId(interval.id)}
                 onMouseLeave={() => setHoveredIntervalId(null)}
@@ -580,6 +736,10 @@ export function IntervalGrid({
                   }}
                 />
 
+                {/* Resize handles for badge view */}
+                {(isHovered || isSelected) &&
+                  renderBadgeResizeHandles(interval)}
+
                 {/* Interval Label (shown on hover) */}
                 {isHovered && (
                   <div
@@ -603,7 +763,7 @@ export function IntervalGrid({
                 isSelected
                   ? 'ring-2 ring-white ring-offset-2 shadow-lg'
                   : 'hover:ring-1 hover:ring-gray-300'
-              } ${isBeingDragged ? 'z-50 opacity-80' : ''}`}
+              } ${isBeingDragged || isBeingResized ? 'z-50 opacity-80' : ''}`}
               style={{
                 left: `${interval.startLeft}px`,
                 width: `${Math.max(interval.width, 20)}px`,
@@ -623,6 +783,9 @@ export function IntervalGrid({
               <div className="px-2 py-1 text-xs text-white truncate">
                 {interval.metadata?.label || 'Interval'}
               </div>
+
+              {/* Resize handles for grid view */}
+              {(isHovered || isSelected) && renderGridResizeHandles(interval)}
             </div>
           )
         })}
@@ -637,6 +800,8 @@ export function IntervalGrid({
                   ? interactionMarquee.isValid
                     ? 'bg-blue-500 bg-opacity-20 border-blue-500'
                     : 'bg-red-500 bg-opacity-20 border-red-500'
+                  : interactionMarquee.mode === 'resizing'
+                  ? 'bg-purple-500 bg-opacity-20 border-purple-500'
                   : 'bg-transparent border-green-500 border-dashed'
               }`}
               style={{
@@ -650,6 +815,8 @@ export function IntervalGrid({
               className={`absolute top-8 bottom-2 w-1 ${
                 interactionMarquee.mode === 'creating'
                   ? 'bg-blue-500'
+                  : interactionMarquee.mode === 'resizing'
+                  ? 'bg-purple-500'
                   : 'bg-green-500'
               }`}
               style={{
@@ -660,6 +827,8 @@ export function IntervalGrid({
               className={`absolute top-8 bottom-2 w-1 ${
                 interactionMarquee.mode === 'creating'
                   ? 'bg-blue-500'
+                  : interactionMarquee.mode === 'resizing'
+                  ? 'bg-purple-500'
                   : 'bg-green-500'
               }`}
               style={{
@@ -673,6 +842,8 @@ export function IntervalGrid({
                 className={`absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full px-2 py-1 text-xs text-white rounded whitespace-nowrap ${
                   interactionMarquee.mode === 'creating'
                     ? 'bg-blue-600'
+                    : interactionMarquee.mode === 'resizing'
+                    ? 'bg-purple-600'
                     : 'bg-green-600'
                 }`}
                 style={{
@@ -682,6 +853,8 @@ export function IntervalGrid({
                 }}>
                 {interactionMarquee.mode === 'creating'
                   ? 'Creating'
+                  : interactionMarquee.mode === 'resizing'
+                  ? 'Resizing'
                   : 'Selecting'}
                 {interactionMarquee.mode === 'creating' && (
                   <span className="ml-1">
@@ -716,9 +889,16 @@ export function IntervalGrid({
               className={`${
                 interactionMode === 'creating'
                   ? 'text-blue-600'
+                  : interactionMode === 'resizing'
+                  ? 'text-purple-600'
                   : 'text-green-600'
               }`}>
-              Mode: {interactionMode === 'creating' ? 'Creating' : 'Selecting'}
+              Mode:{' '}
+              {interactionMode === 'creating'
+                ? 'Creating'
+                : interactionMode === 'resizing'
+                ? 'Resizing'
+                : 'Selecting'}
             </span>
           )}
         </div>

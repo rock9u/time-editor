@@ -164,10 +164,10 @@ _ On `onMouseUp`, if `isDragging` is `true`:
 _ Dispatch `UPDATE_INTERVAL` action with the interval's `id`, `newStartTime`, and `newEndTime`. \* Reset `isDragging` to `false`.
 
 **5.2. Resize (Edges)**
-_ **Event Listener:** Attach `onMouseDown` to the small resize handles at the start/end of the badge.
+_ **Event Listener:** Attach `onMouseDown` to the small resize handles at the start/end of the interval block and badge. around 4px and it has filter indication and border.
 _ **Start Resize:**
 _ Determine if resizing `start` or `end`. Record `initialInterval` and `initialMouseX`.
-_ Set `isResizing` state to `true`.
+_ add a new mode "resizing".
 _ **During Resize:**
 _ On `onMouseMove`, calculate `deltaX`.
 _ Convert `deltaX` to `deltaTime`.
@@ -175,9 +175,9 @@ _ If resizing start: `newStartTime = initialInterval.startTime + deltaTime`. Sna
 _ If resizing end: `newEndTime = initialInterval.endTime + deltaTime`. Snap `newEndTime`. Ensure `newEndTime > interval.startTime`.
 _ Visually update the badge's `width` and/or `left` position.
 _ **End Resize:**
-_ On `onMouseUp`, if `isResizing` is `true`:
+_ On `onMouseUp`, if mode is resizing:
 _ Dispatch `UPDATE_INTERVAL` action with the interval's `id`, `newStartTime` (if start was resized), and `newEndTime` (if end was resized).
-_ Reset `isResizing` to `false`.
+_ Reset mode to "none".
 
 **5.3. Double-Click for Metadata/Timestamp Editing**
 _ **Event Listener:** Attach `onDoubleClick` to each interval badge.

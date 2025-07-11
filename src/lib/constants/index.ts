@@ -211,3 +211,14 @@ export const SELECTION_CONSTANTS = {
   DROP_SHADOW: 'drop-shadow(0 0 4px rgba(255,255,255,0.8))',
   LINE_DROP_SHADOW: 'drop-shadow(0 0 2px rgba(255,255,255,0.6))',
 } as const
+
+// Resize handle constants
+export const RESIZE_HANDLE_CONSTANTS = {
+  WIDTH: 4, // pixels
+  HEIGHT: 8, // pixels for badge view
+  BORDER_RADIUS: 2, // pixels
+  HOVER_OPACITY: 0.75,
+  ACTIVE_OPACITY: 1.0,
+  RING_COLOR: 'ring-blue-500',
+  RING_OFFSET: 'ring-offset-1',
+} as const
