@@ -319,12 +319,12 @@ This detailed breakdown provides the engineering team with clear, actionable req
 2. when drag an drop timelines, and the grid is set to month. setup a full june interval, a full july interval. move both to feb and march. July to march would not work because the interval in terms of days are 30 days. i think we should refactor the state management a bit. right now we are storing everything in start/end datetime. we should do start datetime, then use grid type and gird amount to reduce bugs like this.
 3. [x] missing indication of selected intervals/badge block. we should add some white border and filter to them to show that they are selected.
 4. [x] when drag and drop, the badge and interval box are not following mouse fully. this needs to be more snappy. we should use dnd kit library to implement drag and drop for convenience.
-5. when drag an drop timelines, and the grid is set to month. setup a full june interval, a full july interval. move both to feb and march. July to march would not work because the interval in terms of days are 30 days. i think we should refactor the state management a bit. right now we are storing everything in start/end datetime. we should do start datetime, then use grid type and gird amount to reduce bugs like this.
+5. [x] when drag an drop timelines, and the grid is set to month. setup a full june interval, a full july interval. move both to feb and march. July to march would not work because the interval in terms of days are 30 days. i think we should refactor the state management a bit. right now we are storing everything in start/end datetime. we should do start datetime, then use grid type and gird amount to reduce bugs like this.
 6. we should add batch drag and drop after multiple elements are all select. right now only the single element will be moved
 7. after double clicking, a interval of 1 grid unit should always default placed, the rest of the drag increase behaviour should be the same
 8. the resize region should show indicator on hover. and it should allowed to be used without need to select it first.
 9. after clicking and dragging, attempting to just select the grid, with the very change the interval moves a whole grid a head. lets add a threshhold delta when we change the mode to "repositon". half of the current intervals' with maybe.
-10. need more info on toolbar's action, adding hover text for each icon.
+10. [x] need more info on toolbar's action, adding hover text for each icon.
 
 # Doc
 

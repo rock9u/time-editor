@@ -3,13 +3,19 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { TimelineEditor } from '@/components/TimelineEditor/TimelineEditor'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import { TimelineProvider } from './contexts/TimelineContext'
+import { Button } from '@/components/ui/button'
 
 function fallbackRender({ error, resetErrorBoundary }: FallbackProps) {
   return (
     <div role="alert">
-      <p>Something went wrong:</p>
-      <pre style={{ color: 'red' }}>{error.message}</pre>
-      <button onClick={resetErrorBoundary}>Retry</button>
+      <span>
+        <span className="text-lg">Something went wrong</span>
+        <Button onClick={resetErrorBoundary} className="ml-2" variant="ghost">
+          Retry
+        </Button>
+      </span>
+      <pre className="text-red-500">{error.message}</pre>
+      <pre className="text-red-500">{error.stack}</pre>
     </div>
   )
 }
