@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { useCallback, useEffect, useState } from 'react'
+import { useTimeline } from '../../contexts/TimelineContext'
 import {
-  DEFAULT_GRID_SETTINGS,
   DEFAULT_METADATA,
   DEFAULT_TIMELINE_BOUNDS,
   INTERVAL_COLORS,
@@ -10,6 +10,7 @@ import {
   UI_CONSTANTS,
 } from '../../lib/constants'
 import { formatTimestamp, getDurationText } from '../../lib/timeline-utils'
+import { createIntervalV2 } from '../../lib/timeline-utils-v2'
 import { generateUUID } from '../../lib/utils'
 import type {
   GridIntervalUnit,
@@ -22,9 +23,6 @@ import { IntervalEditDialog } from './IntervalEditDialog'
 import { IntervalGrid } from './IntervalGrid'
 import { TimelineContextMenu } from './TimelineContextMenu'
 import { TimelineToolbar } from './TimelineToolbar'
-import { useTimelineReducer } from './useTimelineReducer'
-import { useTimeline } from '../../contexts/TimelineContext'
-import { createIntervalV2 } from '../../lib/timeline-utils-v2'
 
 export function TimelineEditor() {
   const {
@@ -346,42 +344,39 @@ export function TimelineEditor() {
       onDouble={handleDouble}
       onHalf={handleHalf}
       onOpenGridSettings={() => setIsGridSettingsOpen(true)}>
-      <div className="p-4">
-        <h2 className="text-2xl font-bold mb-4">Timeline Editor</h2>
-
-        {/* Controls */}
-        <div className="mb-4 space-x-2">
-          <button
-            onClick={() => handleAddTestInterval()}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-            Add Test Interval
-          </button>
-          <button
-            onClick={clearSelection}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-            Clear Selection
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={selectedIntervalIds.size === 0}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50">
-            Delete Selected ({selectedIntervalIds.size})
-          </button>
-        </div>
-
-        {/* Grid Settings */}
-        <div className="mb-4 p-3 bg-gray-50 rounded">
-          <h3 className="text-sm font-semibold mb-2">Grid Settings</h3>
+      {/* Grid Settings */}
+      <div className="mb-4 p-3 bg-gray-50 rounded">
+        <h2 className="text-lg font-semibold mb-2">Grid Settings</h2>
+        <div className="p-4">
+          {/* Controls */}
+          <div className="mb-4 space-x-2">
+            <button
+              onClick={() => handleAddTestInterval()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+              Add Test Interval
+            </button>
+            <button
+              onClick={clearSelection}
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+              Clear Selection
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={selectedIntervalIds.size === 0}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50">
+              Delete Selected ({selectedIntervalIds.size})
+            </button>
+          </div>
           <div className="flex gap-4 flex-wrap">
             <div>
               <label className="text-xs text-gray-600">Unit:</label>
               <select
                 value={gridSettings.unit}
                 onChange={e =>
-                  setGridSettings(prev => ({
-                    ...prev,
+                  setGridSettings({
+                    ...gridSettings,
                     unit: e.target.value as GridIntervalUnit,
-                  }))
+                  })
                 }
                 className="ml-2 px-2 py-1 text-sm border rounded">
                 <option value="day">Day(s)</option>
@@ -397,10 +392,10 @@ export function TimelineEditor() {
                 max="12"
                 value={gridSettings.value}
                 onChange={e =>
-                  setGridSettings(prev => ({
-                    ...prev,
+                  setGridSettings({
+                    ...gridSettings,
                     value: parseInt(e.target.value),
-                  }))
+                  })
                 }
                 className="ml-2 px-2 py-1 text-sm border rounded w-16"
               />

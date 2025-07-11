@@ -1,6 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react'
-import { DateTime } from 'luxon'
-import type { GridSettings, GridIntervalUnit } from '../types/timeline'
+import type { GridIntervalUnit } from './timeline'
 
 // New interval structure using start + grid + amount
 export interface TimelineIntervalV2 {

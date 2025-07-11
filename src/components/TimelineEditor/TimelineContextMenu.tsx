@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Settings,
 } from 'lucide-react'
+import { KEYBOARD_SHORTCUTS } from '../../lib/constants'
 import type { TimelineInterval } from '../../types/timeline'
 
 interface TimelineContextMenuProps {
@@ -47,13 +48,15 @@ export function TimelineContextMenu({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-56">
+      <ContextMenuContent className="w-56 bg-background text-foreground">
         {/* Copy */}
         {hasSelection && (
           <ContextMenuItem onClick={onCopy} className="flex items-center gap-2">
             <Copy size={14} />
             Copy
-            <span className="ml-auto text-xs text-gray-500">Ctrl+C</span>
+            <span className="ml-auto text-xs text-gray-500">
+              {KEYBOARD_SHORTCUTS.COPY}
+            </span>
           </ContextMenuItem>
         )}
 
@@ -64,7 +67,9 @@ export function TimelineContextMenu({
             className="flex items-center gap-2">
             <ClipboardList size={14} />
             Paste
-            <span className="ml-auto text-xs text-gray-500">Ctrl+V</span>
+            <span className="ml-auto text-xs text-gray-500">
+              {KEYBOARD_SHORTCUTS.PASTE}
+            </span>
           </ContextMenuItem>
         )}
 
@@ -75,7 +80,9 @@ export function TimelineContextMenu({
             className="flex items-center gap-2">
             <CopyPlus size={14} />
             Duplicate
-            <span className="ml-auto text-xs text-gray-500">Ctrl+D</span>
+            <span className="ml-auto text-xs text-gray-500">
+              {KEYBOARD_SHORTCUTS.DUPLICATE}
+            </span>
           </ContextMenuItem>
         )}
 
@@ -84,7 +91,9 @@ export function TimelineContextMenu({
           <ContextMenuItem onClick={onHalf} className="flex items-center gap-2">
             <RotateCcw size={14} />
             Half Duration
-            <span className="ml-auto text-xs text-gray-500">Ctrl+[</span>
+            <span className="ml-auto text-xs text-gray-500">
+              {KEYBOARD_SHORTCUTS.HALF}
+            </span>
           </ContextMenuItem>
         )}
 
@@ -95,7 +104,9 @@ export function TimelineContextMenu({
             className="flex items-center gap-2">
             <RotateCcw size={14} />
             Double Duration
-            <span className="ml-auto text-xs text-gray-500">Ctrl+]</span>
+            <span className="ml-auto text-xs text-gray-500">
+              {KEYBOARD_SHORTCUTS.DOUBLE}
+            </span>
           </ContextMenuItem>
         )}
 
@@ -106,7 +117,9 @@ export function TimelineContextMenu({
             className="flex items-center gap-2 text-red-600">
             <Trash2 size={14} />
             Delete
-            <span className="ml-auto text-xs text-gray-500">Delete</span>
+            <span className="ml-auto text-xs text-gray-500">
+              {KEYBOARD_SHORTCUTS.DELETE}
+            </span>
           </ContextMenuItem>
         )}
 
@@ -119,7 +132,9 @@ export function TimelineContextMenu({
           className="flex items-center gap-2">
           <Settings size={14} />
           Change Grid Interval...
-          <span className="ml-auto text-xs text-gray-500">Ctrl+G</span>
+          <span className="ml-auto text-xs text-gray-500">
+            {KEYBOARD_SHORTCUTS.GRID_SETTINGS}
+          </span>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

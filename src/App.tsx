@@ -1,17 +1,15 @@
-import TimeEditor from '@/components/TimelineEditor/TimeEditor'
-import './App.css'
-import { IntervalGrid } from './components/IntervalGrid'
+import { ModeToggle } from '@/components/mode-toggle'
+import { ThemeProvider } from '@/components/theme-provider'
 import { TimelineEditor } from '@/components/TimelineEditor/TimelineEditor'
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import { TimelineProvider } from './contexts/TimelineContext'
-import { ErrorBoundary } from 'react-error-boundary'
 
-function fallbackRender({ error, resetErrorBoundary }) {
-  // Call resetErrorBoundary() to reset the error boundary and retry the render.
-
+function fallbackRender({ error, resetErrorBoundary }: FallbackProps) {
   return (
     <div role="alert">
       <p>Something went wrong:</p>
       <pre style={{ color: 'red' }}>{error.message}</pre>
+      <button onClick={resetErrorBoundary}>Retry</button>
     </div>
   )
 }
@@ -23,14 +21,19 @@ function App() {
         console.error(details)
         window.location.reload()
       }}>
-      <TimelineProvider>
-        <div className="min-h-screen bg-gray-50">
-          <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">Timeline Editor</h1>
-            <TimelineEditor />
+      <ThemeProvider defaultTheme="system" storageKey="timeline-editor-theme">
+        <TimelineProvider>
+          <div className="min-h-screen bg-gray-50">
+            <div className="container mx-auto p-4">
+              <nav className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold mb-4">Timeline Editor</h1>
+                <ModeToggle />
+              </nav>
+              <TimelineEditor />
+            </div>
           </div>
-        </div>
-      </TimelineProvider>
+        </TimelineProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   )
 }

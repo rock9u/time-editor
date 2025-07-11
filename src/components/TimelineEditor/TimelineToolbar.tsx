@@ -1,5 +1,21 @@
 import React from 'react'
-import { Copy, ClipboardList, CopyPlus, Trash2, RotateCcw } from 'lucide-react'
+import {
+  Copy,
+  ClipboardList,
+  CopyPlus,
+  Trash2,
+  RotateCcw,
+  X,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { KEYBOARD_SHORTCUTS } from '../../lib/constants'
 import type { TimelineInterval } from '../../types/timeline'
 
 interface TimelineToolbarProps {
@@ -31,106 +47,143 @@ export function TimelineToolbar({
   if (!hasSelection && !hasClipboard) return null
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-2 flex items-center gap-2">
-        {/* Selection Info */}
-        {hasSelection && (
-          <div className="text-sm text-gray-600 mr-4">
-            {selectedIntervals.length} selected
-          </div>
-        )}
+    <TooltipProvider>
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="bg-card border border-border rounded-lg shadow-lg px-4 py-2 flex items-center gap-2">
+          {/* Selection Info */}
+          {hasSelection && (
+            <Badge variant="secondary" className="mr-2">
+              {selectedIntervals.length} selected
+            </Badge>
+          )}
 
-        {/* Copy Button */}
-        {hasSelection && (
-          <button
-            onClick={onCopy}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors group relative"
-            title="Copy selected intervals to clipboard (Ctrl+C)">
-            <Copy size={16} />
-            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Copy (Ctrl+C)
-            </span>
-          </button>
-        )}
+          {/* Copy Button */}
+          {hasSelection && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onCopy}
+                  className="h-8 w-8 p-0">
+                  <Copy size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Copy ({KEYBOARD_SHORTCUTS.COPY})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-        {/* Paste Button */}
-        {hasClipboard && (
-          <button
-            onClick={onPaste}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors group relative"
-            title="Paste intervals from clipboard (Ctrl+V)">
-            <ClipboardList size={16} />
-            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Paste (Ctrl+V)
-            </span>
-          </button>
-        )}
+          {/* Paste Button */}
+          {hasClipboard && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onPaste}
+                  className="h-8 w-8 p-0">
+                  <ClipboardList size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Paste ({KEYBOARD_SHORTCUTS.PASTE})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-        {/* Duplicate Button */}
-        {hasSelection && (
-          <button
-            onClick={onDuplicate}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors group relative"
-            title="Duplicate selected intervals (Ctrl+D)">
-            <CopyPlus size={16} />
-            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Duplicate (Ctrl+D)
-            </span>
-          </button>
-        )}
+          {/* Duplicate Button */}
+          {hasSelection && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onDuplicate}
+                  className="h-8 w-8 p-0">
+                  <CopyPlus size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Duplicate ({KEYBOARD_SHORTCUTS.DUPLICATE})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-        {/* Half Duration Button */}
-        {hasSelection && (
-          <button
-            onClick={onHalf}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors group relative"
-            title="Half the duration of selected intervals (Ctrl+[)">
-            <RotateCcw size={16} />
-            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Half Duration (Ctrl+[)
-            </span>
-          </button>
-        )}
+          {/* Half Duration Button */}
+          {hasSelection && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onHalf}
+                  className="h-8 w-8 p-0">
+                  <RotateCcw size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Half Duration ({KEYBOARD_SHORTCUTS.HALF})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-        {/* Double Duration Button */}
-        {hasSelection && (
-          <button
-            onClick={onDouble}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors group relative"
-            title="Double the duration of selected intervals (Ctrl+])">
-            <RotateCcw size={16} />
-            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Double Duration (Ctrl+])
-            </span>
-          </button>
-        )}
+          {/* Double Duration Button */}
+          {hasSelection && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onDouble}
+                  className="h-8 w-8 p-0">
+                  <RotateCcw size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Double Duration ({KEYBOARD_SHORTCUTS.DOUBLE})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-        {/* Delete Button */}
-        {hasSelection && (
-          <button
-            onClick={onDelete}
-            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors group relative"
-            title="Delete selected intervals (Delete)">
-            <Trash2 size={16} />
-            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-red-600 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Delete (Delete)
-            </span>
-          </button>
-        )}
+          {/* Delete Button */}
+          {hasSelection && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onDelete}
+                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Trash2 size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete ({KEYBOARD_SHORTCUTS.DELETE})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-        {/* Clear Selection Button */}
-        {hasSelection && (
-          <button
-            onClick={onClearSelection}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors group relative"
-            title="Clear selection (Escape)">
-            ×
-            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Clear Selection (Esc)
-            </span>
-          </button>
-        )}
+          {/* Clear Selection Button */}
+          {hasSelection && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClearSelection}
+                  className="h-8 w-8 p-0">
+                  <X size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Clear Selection ({KEYBOARD_SHORTCUTS.CLEAR_SELECTION})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

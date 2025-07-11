@@ -1,151 +1,12 @@
-import type { ReactNode } from 'react'
-import { createContext, useContext, useReducer } from 'react'
+import {
+  initialState,
+  timelineReducer,
+  type TimelineContextValue,
+  type TimelineIntervalV2,
+} from '@/contexts/TimelineContext'
+import type { GridSettings } from '@/types/timeline'
 import { DateTime } from 'luxon'
-import type { GridSettings, GridIntervalUnit } from '../types/timeline'
-import { getIntervalEndTime } from '@/lib/timeline-utils-v2'
-
-// New interval structure using start + grid + amount
-export interface TimelineIntervalV2 {
-  id: string
-  startTime: number // Unix timestamp in milliseconds
-  gridUnit: GridIntervalUnit // 'day', 'month', 'year'
-  gridAmount: number // How many grid units this interval spans
-  metadata?: {
-    label?: string
-    color?: string
-    description?: string
-    tags?: string[]
-    [key: string]: any
-  }
-}
-
-interface TimelineState {
-  intervals: TimelineIntervalV2[]
-  selectedIntervalIds: Set<string>
-  gridSettings: GridSettings
-  clipboard: TimelineIntervalV2[]
-}
-
-type TimelineAction =
-  | { type: 'ADD_INTERVAL'; payload: TimelineIntervalV2 }
-  | {
-      type: 'UPDATE_INTERVAL'
-      payload: { id: string; updates: Partial<TimelineIntervalV2> }
-    }
-  | { type: 'DELETE_INTERVAL'; payload: string }
-  | { type: 'SET_INTERVALS'; payload: TimelineIntervalV2[] }
-  | { type: 'SET_SELECTED_INTERVALS'; payload: string[] }
-  | { type: 'CLEAR_SELECTION' }
-  | { type: 'SET_GRID_SETTINGS'; payload: GridSettings }
-  | { type: 'SET_CLIPBOARD'; payload: TimelineIntervalV2[] }
-  | { type: 'CLEAR_CLIPBOARD' }
-
-const initialState: TimelineState = {
-  intervals: [],
-  selectedIntervalIds: new Set(),
-  gridSettings: { unit: 'month', value: 1 },
-  clipboard: [],
-}
-
-function timelineReducer(
-  state: TimelineState,
-  action: TimelineAction
-): TimelineState {
-  switch (action.type) {
-    case 'ADD_INTERVAL':
-      return {
-        ...state,
-        intervals: [...state.intervals, action.payload],
-      }
-
-    case 'UPDATE_INTERVAL':
-      return {
-        ...state,
-        intervals: state.intervals.map(interval =>
-          interval.id === action.payload.id
-            ? { ...interval, ...action.payload.updates }
-            : interval
-        ),
-      }
-
-    case 'DELETE_INTERVAL':
-      return {
-        ...state,
-        intervals: state.intervals.filter(
-          interval => interval.id !== action.payload
-        ),
-        selectedIntervalIds: new Set(
-          Array.from(state.selectedIntervalIds).filter(
-            id => id !== action.payload
-          )
-        ),
-      }
-
-    case 'SET_INTERVALS':
-      return {
-        ...state,
-        intervals: action.payload,
-      }
-
-    case 'SET_SELECTED_INTERVALS':
-      return {
-        ...state,
-        selectedIntervalIds: new Set(action.payload),
-      }
-
-    case 'CLEAR_SELECTION':
-      return {
-        ...state,
-        selectedIntervalIds: new Set(),
-      }
-
-    case 'SET_GRID_SETTINGS':
-      return {
-        ...state,
-        gridSettings: action.payload,
-      }
-
-    case 'SET_CLIPBOARD':
-      return {
-        ...state,
-        clipboard: action.payload,
-      }
-
-    case 'CLEAR_CLIPBOARD':
-      return {
-        ...state,
-        clipboard: [],
-      }
-
-    default:
-      return state
-  }
-}
-
-interface TimelineContextValue {
-  state: TimelineState
-  dispatch: React.Dispatch<TimelineAction>
-  // Helper functions
-  addInterval: (interval: Omit<TimelineIntervalV2, 'id'>) => void
-  updateInterval: (id: string, updates: Partial<TimelineIntervalV2>) => void
-  deleteInterval: (id: string) => void
-  selectInterval: (id: string) => void
-  deselectInterval: (id: string) => void
-  selectMultipleIntervals: (ids: string[]) => void
-  clearSelection: () => void
-  setGridSettings: (settings: GridSettings) => void
-  copyIntervals: (ids: string[]) => void
-  pasteIntervals: () => void
-  duplicateIntervals: (ids: string[]) => void
-  getIntervalEndTime: (interval: TimelineIntervalV2) => number
-  getIntervalDuration: (interval: TimelineIntervalV2) => number
-  moveInterval: (id: string, newStartTime: number) => void
-  resizeInterval: (id: string, newGridAmount: number) => void
-}
-
-const TimelineContext = createContext<TimelineContextValue | undefined>(
-  undefined
-)
+import { type ReactNode, useReducer } from 'react'
 
 export function TimelineProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(timelineReducer, initialState)
@@ -415,26 +276,5 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
     getMillisecondsPerGridUnit,
   }
 
-  return (
-    <TimelineContext.Provider value={value}>
-      {children}
-    </TimelineContext.Provider>
-  )
-}
-
-export function useTimeline() {
-  const context = useContext(TimelineContext)
-  if (context === undefined) {
-    throw new Error('useTimeline must be used within a TimelineProvider')
-  }
-  return {
-    ...context,
-    state: {
-      ...context.state,
-      intervals: context.state.intervals.map(interval => ({
-        ...interval,
-        endTime: getIntervalEndTime(interval),
-      })),
-    },
-  }
+  return <TimelineProvider value={value}>{children}</TimelineProvider>
 }
