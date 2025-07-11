@@ -35,8 +35,12 @@ export function pixelsToTimestamp(
  */
 export function snapToGrid(
   timestamp: number,
-  gridSettings: GridSettings
-): number {
+  gridSettings: Partial<GridSettings>
+): {
+  toMillis: () => number
+  gridAmount: number
+  unit: GridIntervalUnit
+} {
   const dt = DateTime.fromMillis(timestamp)
   const { unit, value } = gridSettings
 
@@ -92,10 +96,18 @@ export function snapToGrid(
       break
 
     default:
-      return timestamp
+      return {
+        toMillis: () => timestamp,
+        gridAmount: 1,
+        unit: 'day',
+      }
   }
 
-  return snappedDateTime.toMillis()
+  return {
+    toMillis: () => snappedDateTime.toMillis(),
+    gridAmount: value,
+    unit: unit,
+  }
 }
 
 /**
@@ -515,7 +527,7 @@ export function findNearestGridLine(
   const { unit, value } = gridSettings
 
   // Get the current grid unit boundaries
-  const currentGridStart = snapToGrid(timestamp, gridSettings)
+  const currentGridStart = snapToGrid(timestamp, gridSettings).toMillis()
   const currentGridEnd = DateTime.fromMillis(currentGridStart)
     .plus({ [unit]: value })
     .toMillis()

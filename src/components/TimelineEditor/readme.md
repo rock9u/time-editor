@@ -307,6 +307,12 @@ _ Use `shadcn/ui` components for consistency and rapid development (buttons, dia
 - **Interval Metadata Editor:** Expanding the double-click modal to allow editing more `metadata` fields (e.g., custom label, color picker).
 - **Zooming/Panning:** Dynamic scaling of the timeline view.
 - **Undo/Redo:** Implementing an action history for state changes.
+- **Shift:** Implementing an shortcut modifier for multiple selection.
+- **instruction** helper to guide people starting out
+- **Pencil mode** allows creating on a single click
+- **better indicator overlapped** overlapping interval and badges are hard to see, clicking the selected one should have higher zindex value
+- **support specific date adding**
+- **support grid snapping to a start date, or dynamic cursor that allows change of snapping point**
 - **Timezone Support:** Explicit handling of timezones (Luxon supports this). Defaulting to local system timezone for now.
 
 ---
@@ -373,29 +379,73 @@ DateTime:
 ├── README.md
 ├── components
 ├── components.json
+├── dist
+│   ├── assets
+│   │   ├── index-Lg3eGw9H.css
+│   │   └── index-QQ6SA8wl.js
+│   ├── index.html
+│   └── vite.svg
 ├── eslint.config.js
 ├── index.html
 ├── package.json
 ├── pnpm-lock.yaml
 ├── public
-│ └── vite.svg
+│   └── vite.svg
 ├── src
-│ ├── App.css
-│ ├── App.tsx
-│ ├── assets
-│ │ └── react.svg
-│ ├── components
-│ │ ├── DynamicCirclesInBigCircle.tsx
-│ │ ├── IntervalGrid.tsx
-│ │ ├── TimelineEditor
-│ │ ├── ui
-│ │ └── useRampIntervalReducer.ts
-│ ├── index.css
-│ ├── lib
-│ │ └── utils.ts
-│ ├── main.tsx
-│ ├── utils.ts
-│ └── vite-env.d.ts
+│   ├── App.tsx
+│   ├── assets
+│   │   └── react.svg
+│   ├── components
+│   │   ├── DynamicCirclesInBigCircle.tsx
+│   │   ├── IntervalGrid.tsx
+│   │   ├── TimelineEditor
+│   │   │   ├── DraggableInterval.tsx
+│   │   │   ├── GridSettingsPanel.tsx
+│   │   │   ├── IntervalEditDialog.tsx
+│   │   │   ├── IntervalGrid.tsx
+│   │   │   ├── TimeEditor.tsx
+│   │   │   ├── TimelineContextMenu.tsx
+│   │   │   ├── TimelineEditor.tsx
+│   │   │   ├── TimelineToolbar.tsx
+│   │   │   ├── instructions_chatgpt.md
+│   │   │   ├── instructions_gemini.md
+│   │   │   ├── readme.md
+│   │   │   └── useTimelineReducer.ts
+│   │   ├── mode-toggle.tsx
+│   │   ├── theme-provider.tsx
+│   │   ├── ui
+│   │   │   ├── badge.tsx
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── checkbox.tsx
+│   │   │   ├── context-menu.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── popover.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── separator.tsx
+│   │   │   ├── textarea.tsx
+│   │   │   └── tooltip.tsx
+│   │   └── useRampIntervalReducer.ts
+│   ├── contexts
+│   │   └── TimelineContext.tsx
+│   ├── index.css
+│   ├── lib
+│   │   ├── constants
+│   │   │   └── index.ts
+│   │   ├── keyboard-utils.ts
+│   │   ├── timeline-utils-v2.ts
+│   │   ├── timeline-utils.ts
+│   │   ├── utils
+│   │   │   └── keyboard-shortcuts.ts
+│   │   └── utils.ts
+│   ├── main.tsx
+│   ├── types
+│   │   └── timeline.ts
+│   ├── utils.ts
+│   └── vite-env.d.ts
 ├── tsconfig.app.json
 ├── tsconfig.json
 ├── tsconfig.node.json

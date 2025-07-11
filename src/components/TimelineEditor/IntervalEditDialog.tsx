@@ -2,6 +2,17 @@ import { DateTime } from 'luxon'
 import { useEffect, useState } from 'react'
 import { formatTimestamp } from '../../lib/timeline-utils'
 import type { TimelineInterval } from '../../types/timeline'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface IntervalEditDialogProps {
   interval: TimelineInterval | null
@@ -111,174 +122,155 @@ export function IntervalEditDialog({
   if (!isOpen || !interval) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Edit Interval</h2>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Interval</DialogTitle>
+        </DialogHeader>
 
         <div className="space-y-4">
           {/* Label */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Label
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="label">Label</Label>
+            <Input
+              id="label"
               type="text"
               value={formData.label}
               onChange={e =>
                 setFormData(prev => ({ ...prev, label: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter interval label"
             />
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
               value={formData.description}
               onChange={e =>
                 setFormData(prev => ({ ...prev, description: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
               placeholder="Enter description"
             />
           </div>
 
           {/* Color */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Color
-            </label>
+          <div className="space-y-2">
+            <Label htmlFor="color">Color</Label>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="color"
                 value={formData.color}
                 onChange={e =>
                   setFormData(prev => ({ ...prev, color: e.target.value }))
                 }
-                className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                className="w-12 h-10 p-1 border cursor-pointer"
               />
-              <input
+              <Input
                 type="text"
                 value={formData.color}
                 onChange={e =>
                   setFormData(prev => ({ ...prev, color: e.target.value }))
                 }
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="#3B82F6"
               />
             </div>
           </div>
 
           {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tags (comma-separated)
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="tags">Tags (comma-separated)</Label>
+            <Input
+              id="tags"
               type="text"
               value={formData.tags}
               onChange={e =>
                 setFormData(prev => ({ ...prev, tags: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="tag1, tag2, tag3"
             />
           </div>
 
           {/* Start Date/Time */}
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date</Label>
+              <Input
+                id="startDate"
                 type="date"
                 value={formData.startDate}
                 onChange={e =>
                   setFormData(prev => ({ ...prev, startDate: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Time
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Start Time</Label>
+              <Input
+                id="startTime"
                 type="time"
                 value={formData.startTime}
                 onChange={e =>
                   setFormData(prev => ({ ...prev, startTime: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {/* End Date/Time */}
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="endDate">End Date</Label>
+              <Input
+                id="endDate"
                 type="date"
                 value={formData.endDate}
                 onChange={e =>
                   setFormData(prev => ({ ...prev, endDate: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Time
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="endTime">End Time</Label>
+              <Input
+                id="endTime"
                 type="time"
                 value={formData.endTime}
                 onChange={e =>
                   setFormData(prev => ({ ...prev, endTime: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {/* Current Values Display */}
-          <div className="p-3 bg-gray-50 rounded text-sm">
-            <div className="font-medium mb-1">Current Values:</div>
-            <div className="text-gray-600">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Current Values</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
               <div>Start: {formatTimestamp(interval.startTime)}</div>
               <div>End: {formatTimestamp(interval.endTime)}</div>
               <div>
                 Duration:{' '}
                 {getDurationText(interval.startTime, interval.endTime)}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2 mt-6">
-          <button
-            onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            Save Changes
-          </button>
-          <button
-            onClick={handleCancel}
-            className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+        <div className="flex gap-2 pt-4">
+          <Button onClick={handleSave}>Save</Button>
+          <Button variant="outline" onClick={handleCancel}>
             Cancel
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

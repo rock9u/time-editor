@@ -1,3 +1,15 @@
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { DateTime } from 'luxon'
 import { useCallback, useEffect, useState } from 'react'
 import { useTimeline } from '../../contexts/TimelineContext'
@@ -285,13 +297,6 @@ export function TimelineEditor() {
     selectMultipleIntervals(intervalIds)
   }
 
-  const handleIntervalUpdate = (
-    id: string,
-    updates: Partial<TimelineInterval>
-  ) => {
-    updateInterval(id, updates)
-  }
-
   const handleIntervalEdit = (interval: TimelineInterval) => {
     setEditingInterval(interval)
     setIsEditDialogOpen(true)
@@ -327,48 +332,14 @@ export function TimelineEditor() {
       onHalf={handleHalf}
       onOpenGridSettings={() => setIsGridSettingsOpen(true)}>
       {/* Grid Settings */}
-      <div className="mb-4 p-3rounded">
+      <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold mb-2">Grid Settings</h2>
-        <div className="p-4">
-          {/* Controls */}
-          <div className="mb-4 space-x-2">
-            <button
-              onClick={() => handleAddTestInterval()}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-              Add Test Interval
-            </button>
-            <button
-              onClick={clearSelection}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-              Clear Selection
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={selectedIntervalIds.size === 0}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50">
-              Delete Selected ({selectedIntervalIds.size})
-            </button>
-          </div>
+
+        <div className="flex gap-4 justify-between">
           <div className="flex gap-4 flex-wrap">
-            <div>
-              <label className="text-xs text-gray-600">Unit:</label>
-              <select
-                value={gridSettings.unit}
-                onChange={e =>
-                  setGridSettings({
-                    ...gridSettings,
-                    unit: e.target.value as GridIntervalUnit,
-                  })
-                }
-                className="ml-2 px-2 py-1 text-sm border rounded">
-                <option value="day">Day(s)</option>
-                <option value="month">Month(s)</option>
-                <option value="year">Year(s)</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-600">Value:</label>
-              <input
+            <div className="flex items-center gap-2">
+              <Label>Grid Value:</Label>
+              <Input
                 type="number"
                 min="1"
                 max="12"
@@ -381,28 +352,64 @@ export function TimelineEditor() {
                 }
                 className="ml-2 px-2 py-1 text-sm border rounded w-16"
               />
+              <Select
+                value={gridSettings.unit}
+                onValueChange={value =>
+                  setGridSettings({
+                    ...gridSettings,
+                    unit: value as GridIntervalUnit,
+                  })
+                }>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="day">Day(s)</SelectItem>
+                    <SelectItem value="month">Month(s)</SelectItem>
+                    <SelectItem value="year">Year(s)</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="text-xs text-gray-600 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={preventOverlap}
-                  onChange={e => setPreventOverlap(e.target.checked)}
-                  className="rounded"
-                />
-                Prevent Overlap
-              </label>
-            </div>
-            <div>
-              <label className="text-xs text-gray-600">View Mode:</label>
-              <select
+
+            <div className="flex items-center gap-2">
+              <Label>View Mode:</Label>
+              <Select
                 value={viewMode}
-                onChange={e => setViewMode(e.target.value as 'grid' | 'badge')}
-                className="ml-2 px-2 py-1 text-sm border rounded">
-                <option value="grid">Grid</option>
-                <option value="badge">Badge</option>
-              </select>
+                onValueChange={value => setViewMode(value as 'grid' | 'badge')}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select View Mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="grid">Grid</SelectItem>
+                  <SelectItem value="badge">Badge</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <span className="flex items-center gap-2">
+              <Switch
+                checked={preventOverlap}
+                onCheckedChange={setPreventOverlap}
+              />
+              <Label>Prevent Overlap</Label>
+            </span>
+          </div>
+
+          {/* Controls */}
+          <div className="flex gap-2">
+            <Button onClick={() => handleAddTestInterval()} variant="outline">
+              Add Test Interval
+            </Button>
+            <Button onClick={clearSelection} variant="outline">
+              Clear Selection
+            </Button>
+            <Button
+              onClick={handleDelete}
+              variant="outline"
+              className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
+              Delete Selected ({selectedIntervalIds.size})
+            </Button>
           </div>
         </div>
 
@@ -420,7 +427,7 @@ export function TimelineEditor() {
               timelineBounds={timelineBounds}
               onIntervalSelect={selectInterval}
               onIntervalCreate={handleIntervalCreate}
-              onIntervalUpdate={handleIntervalUpdate}
+              onIntervalUpdate={updateInterval}
               onIntervalSelectRange={handleIntervalSelectRange}
               onIntervalEdit={handleIntervalEdit}
               preventOverlap={preventOverlap}

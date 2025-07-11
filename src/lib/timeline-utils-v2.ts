@@ -110,7 +110,9 @@ export function moveIntervalV2(
 
   return {
     ...interval,
-    startTime: snappedStartTime,
+    startTime: snappedStartTime.toMillis(),
+    gridUnit: gridSettings.unit,
+    gridAmount: snappedStartTime.gridAmount,
   }
 }
 
