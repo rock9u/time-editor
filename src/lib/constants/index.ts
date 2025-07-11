@@ -51,11 +51,11 @@ export const KEYBOARD_SHORTCUTS = {
   COPY: 'Ctrl+C',
   PASTE: 'Ctrl+V',
   DUPLICATE: 'Ctrl+D',
-  DOUBLE: 'Ctrl+2',
-  HALF: 'Ctrl+1',
+  HALF: 'Ctrl+[',
+  DOUBLE: 'Ctrl+]',
   DELETE: 'Delete',
   CLEAR_SELECTION: 'Escape',
-  GRID_SETTINGS: 'Ctrl+3',
+  GRID_SETTINGS: 'Ctrl+G',
 } as const
 
 // Enhanced mouse interaction constants

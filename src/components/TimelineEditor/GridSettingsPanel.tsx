@@ -1,20 +1,21 @@
+import React, { useState } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
-import {
-  DialogHeader,
-  DialogFooter,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { useState } from 'react'
+import { validateGridSettings } from '../../lib/timeline-utils'
 import type { GridSettings, GridIntervalUnit } from '../../types/timeline'
 
 interface GridSettingsPanelProps {
@@ -31,7 +32,7 @@ const GRID_UNIT_LABELS: Record<GridIntervalUnit, string> = {
 }
 
 const GRID_UNIT_VALUES: Record<GridIntervalUnit, number[]> = {
-  day: [1, 7, 14, 30],
+  day: [1, 7, 14, 30, 90, 180, 365],
   month: [1, 3, 6, 12],
   year: [1, 2, 5, 10],
 }
@@ -43,22 +44,39 @@ export function GridSettingsPanel({
   onGridSettingsChange,
 }: GridSettingsPanelProps) {
   const [tempSettings, setTempSettings] = useState<GridSettings>(gridSettings)
+  const [isValid, setIsValid] = useState(true)
 
   const handleSave = () => {
-    onGridSettingsChange(tempSettings)
-    onClose()
+    if (validateGridSettings(tempSettings)) {
+      onGridSettingsChange(tempSettings)
+      onClose()
+    } else {
+      setIsValid(false)
+    }
   }
 
   const handleCancel = () => {
     setTempSettings(gridSettings)
+    setIsValid(true)
     onClose()
   }
 
   const handleUnitChange = (unit: GridIntervalUnit) => {
-    setTempSettings(prev => ({
+    const newSettings = {
       unit,
       value: GRID_UNIT_VALUES[unit][0], // Reset to first value for new unit
-    }))
+    }
+    setTempSettings(newSettings)
+    setIsValid(validateGridSettings(newSettings))
+  }
+
+  const handleValueChange = (value: string) => {
+    const newSettings = {
+      ...tempSettings,
+      value: parseInt(value),
+    }
+    setTempSettings(newSettings)
+    setIsValid(validateGridSettings(newSettings))
   }
 
   return (
@@ -91,12 +109,7 @@ export function GridSettingsPanel({
             </Label>
             <Select
               value={tempSettings.value.toString()}
-              onValueChange={value =>
-                setTempSettings(prev => ({
-                  ...prev,
-                  value: parseInt(value),
-                }))
-              }>
+              onValueChange={handleValueChange}>
               <SelectTrigger className="col-span-3">
                 <SelectValue />
               </SelectTrigger>
@@ -109,6 +122,17 @@ export function GridSettingsPanel({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Validation Error */}
+          {!isValid && (
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
+              <p className="font-medium">Invalid Settings:</p>
+              <p className="text-xs">
+                Please select a valid combination of unit and value.
+              </p>
+            </div>
+          )}
+
           <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
             <p className="font-medium mb-1">Current Settings:</p>
             <p>
@@ -117,7 +141,8 @@ export function GridSettingsPanel({
             </p>
             <p className="text-xs text-gray-500 mt-1">
               This will affect how intervals snap to the grid and how grid lines
-              are displayed.
+              are displayed. Luxon ensures accurate calendar calculations for
+              months and years.
             </p>
           </div>
         </div>
@@ -125,7 +150,9 @@ export function GridSettingsPanel({
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Apply Settings</Button>
+          <Button onClick={handleSave} disabled={!isValid}>
+            Apply Settings
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

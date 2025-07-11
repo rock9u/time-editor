@@ -30,14 +30,71 @@ export function pixelsToTimestamp(
 }
 
 /**
- * Snap timestamp to grid
+ * Enhanced snap to grid using Luxon for accurate calendar calculations
+ * This is crucial for proper grid snapping that respects calendar accuracy
  */
 export function snapToGrid(
   timestamp: number,
   gridSettings: GridSettings
 ): number {
-  const dateTime = DateTime.fromMillis(timestamp)
-  const snappedDateTime = dateTime.startOf(gridSettings.unit)
+  const dt = DateTime.fromMillis(timestamp)
+  const { unit, value } = gridSettings
+
+  // Use Luxon's startOf method for accurate calendar boundaries
+  let snappedDateTime: DateTime
+
+  switch (unit) {
+    case 'day':
+      // Start of the day, then add the specified number of days
+      snappedDateTime = dt.startOf('day')
+      if (value > 1) {
+        // Calculate which day block we're in
+        const dayOfYear = dt.ordinal
+        const blockNumber = Math.floor(dayOfYear / value)
+        const targetDay = blockNumber * value + 1
+        snappedDateTime = DateTime.fromObject({
+          year: dt.year,
+          ordinal: targetDay,
+        })
+      }
+      break
+
+    case 'month':
+      // Start of the month, then add the specified number of months
+      snappedDateTime = dt.startOf('month')
+      if (value > 1) {
+        // Calculate which month block we're in
+        const monthOfYear = dt.month
+        const blockNumber = Math.floor((monthOfYear - 1) / value)
+        const targetMonth = blockNumber * value + 1
+        snappedDateTime = DateTime.fromObject({
+          year: dt.year,
+          month: targetMonth,
+          day: 1,
+        })
+      }
+      break
+
+    case 'year':
+      // Start of the year, then add the specified number of years
+      snappedDateTime = dt.startOf('year')
+      if (value > 1) {
+        // Calculate which year block we're in
+        const year = dt.year
+        const blockNumber = Math.floor(year / value)
+        const targetYear = blockNumber * value
+        snappedDateTime = DateTime.fromObject({
+          year: targetYear,
+          month: 1,
+          day: 1,
+        })
+      }
+      break
+
+    default:
+      return timestamp
+  }
+
   return snappedDateTime.toMillis()
 }
 
@@ -48,27 +105,119 @@ export function calculatePixelsPerMs(
   gridSettings: GridSettings,
   pixelsPerGridUnit: number
 ): number {
-  const msPerGridUnit = getMillisecondsPerGridUnit(gridSettings)
-  return pixelsPerGridUnit / msPerGridUnit
+  const { unit, value } = gridSettings
+  let millisecondsPerUnit: number
+
+  switch (unit) {
+    case 'day':
+      millisecondsPerUnit = value * 24 * 60 * 60 * 1000
+      break
+    case 'month':
+      // Use Luxon for accurate month calculations
+      const now = DateTime.now()
+      const nextMonth = now.plus({ months: value })
+      millisecondsPerUnit = nextMonth.diff(now).toMillis()
+      break
+    case 'year':
+      // Use Luxon for accurate year calculations
+      const nextYear = now.plus({ years: value })
+      millisecondsPerUnit = nextYear.diff(now).toMillis()
+      break
+    default:
+      millisecondsPerUnit = 24 * 60 * 60 * 1000 // Default to 1 day
+  }
+
+  return pixelsPerGridUnit / millisecondsPerUnit
 }
 
 /**
- * Get milliseconds for one grid unit
+ * Get milliseconds per grid unit using Luxon for accuracy
  */
 export function getMillisecondsPerGridUnit(gridSettings: GridSettings): number {
   const { unit, value } = gridSettings
+  const now = DateTime.now()
 
   switch (unit) {
     case 'day':
       return value * 24 * 60 * 60 * 1000
     case 'month':
-      // Approximate - months vary in length
-      return value * 30 * 24 * 60 * 60 * 1000
+      const nextMonth = now.plus({ months: value })
+      return nextMonth.diff(now).toMillis()
     case 'year':
-      return value * 365 * 24 * 60 * 60 * 1000
+      const nextYear = now.plus({ years: value })
+      return nextYear.diff(now).toMillis()
     default:
-      return 24 * 60 * 60 * 1000 // Default to 1 day
+      return 24 * 60 * 60 * 1000
   }
+}
+
+/**
+ * Generate grid lines using Luxon for accurate calendar calculations
+ */
+export function generateGridLines(
+  timelineBounds: TimelineBounds,
+  gridSettings: GridSettings,
+  pixelsPerMs: number
+): Array<{
+  position: number
+  timestamp: number
+  label: string
+  isMajor: boolean
+}> {
+  const lines: Array<{
+    position: number
+    timestamp: number
+    label: string
+    isMajor: boolean
+  }> = []
+
+  let currentDate = DateTime.fromMillis(timelineBounds.minDate)
+  const endDate = DateTime.fromMillis(timelineBounds.maxDate)
+
+  // Start from the beginning of the appropriate unit
+  currentDate = currentDate.startOf(gridSettings.unit)
+
+  while (currentDate <= endDate) {
+    const timestamp = currentDate.toMillis()
+    const position = timestampToPixels(
+      timestamp,
+      timelineBounds.minDate,
+      pixelsPerMs
+    )
+
+    let isMajor = false
+    let label = ''
+
+    // Determine if this is a major grid line and create appropriate labels
+    switch (gridSettings.unit) {
+      case 'day':
+        isMajor = currentDate.day === 1
+        label = currentDate.toFormat('MMM dd')
+        break
+      case 'month':
+        isMajor = currentDate.month === 1
+        label = currentDate.toFormat('MMM yyyy')
+        break
+      case 'year':
+        isMajor = true
+        label = currentDate.toFormat('yyyy')
+        break
+    }
+
+    lines.push({
+      position,
+      timestamp,
+      label,
+      isMajor,
+    })
+
+    // Use Luxon's plus method for accurate calendar arithmetic
+    currentDate = currentDate.plus({
+      [gridSettings.unit]: gridSettings.value,
+    })
+  }
+
+  return lines
 }
 
 /**
@@ -106,28 +255,29 @@ export function isIntervalInBounds(
 /**
  * Format timestamp for display
  */
-export function formatTimestamp(
-  timestamp: number,
-  format: string = 'yyyy-MM-dd HH:mm'
-): string {
-  return DateTime.fromMillis(timestamp).toFormat(format)
+export function formatTimestamp(timestamp: number): string {
+  return DateTime.fromMillis(timestamp).toFormat('yyyy-MM-dd HH:mm:ss')
 }
 
 /**
  * Get duration text between two timestamps
  */
 export function getDurationText(startTime: number, endTime: number): string {
-  const duration = endTime - startTime
-  const hours = Math.floor(duration / (1000 * 60 * 60))
-  const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((duration % (1000 * 60)) / 1000)
+  const start = DateTime.fromMillis(startTime)
+  const end = DateTime.fromMillis(endTime)
+  const duration = end.diff(start)
 
-  if (hours > 0) {
+  const days = Math.floor(duration.as('days'))
+  const hours = Math.floor(duration.as('hours')) % 24
+  const minutes = Math.floor(duration.as('minutes')) % 60
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`
+  } else if (hours > 0) {
     return `${hours}h ${minutes}m`
-  } else if (minutes > 0) {
-    return `${minutes}m ${seconds}s`
+  } else {
+    return `${minutes}m`
   }
-  return `${seconds}s`
 }
 
 /**
@@ -274,4 +424,82 @@ export function getCreationDurationText(
   } else {
     return `${Math.round(duration / 3600000)}h`
   }
+}
+
+/**
+ * Validate grid settings
+ */
+export function validateGridSettings(gridSettings: GridSettings): boolean {
+  const { unit, value } = gridSettings
+
+  if (value < 1) return false
+
+  switch (unit) {
+    case 'day':
+      return value <= 365
+    case 'month':
+      return value <= 12
+    case 'year':
+      return value <= 10
+    default:
+      return false
+  }
+}
+
+/**
+ * Get the next grid line timestamp
+ */
+export function getNextGridLine(
+  timestamp: number,
+  gridSettings: GridSettings
+): number {
+  const dt = DateTime.fromMillis(timestamp)
+  const { unit, value } = gridSettings
+
+  let nextDateTime: DateTime
+
+  switch (unit) {
+    case 'day':
+      nextDateTime = dt.plus({ days: value })
+      break
+    case 'month':
+      nextDateTime = dt.plus({ months: value })
+      break
+    case 'year':
+      nextDateTime = dt.plus({ years: value })
+      break
+    default:
+      return timestamp
+  }
+
+  return nextDateTime.toMillis()
+}
+
+/**
+ * Get the previous grid line timestamp
+ */
+export function getPreviousGridLine(
+  timestamp: number,
+  gridSettings: GridSettings
+): number {
+  const dt = DateTime.fromMillis(timestamp)
+  const { unit, value } = gridSettings
+
+  let prevDateTime: DateTime
+
+  switch (unit) {
+    case 'day':
+      prevDateTime = dt.minus({ days: value })
+      break
+    case 'month':
+      prevDateTime = dt.minus({ months: value })
+      break
+    case 'year':
+      prevDateTime = dt.minus({ years: value })
+      break
+    default:
+      return timestamp
+  }
+
+  return prevDateTime.toMillis()
 }

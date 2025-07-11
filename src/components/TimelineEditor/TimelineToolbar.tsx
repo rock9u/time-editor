@@ -1,8 +1,6 @@
 import React from 'react'
 import { Copy, ClipboardList, CopyPlus, Trash2, RotateCcw } from 'lucide-react'
 import type { TimelineInterval } from '../../types/timeline'
-import { generateUUID } from '../../lib/utils'
-import { TIMELINE_CONSTANTS } from '../../lib/constants'
 
 interface TimelineToolbarProps {
   selectedIntervals: TimelineInterval[]
@@ -12,6 +10,7 @@ interface TimelineToolbarProps {
   onDuplicate: () => void
   onDelete: () => void
   onDouble: () => void
+  onHalf: () => void
   onClearSelection: () => void
 }
 
@@ -23,6 +22,7 @@ export function TimelineToolbar({
   onDuplicate,
   onDelete,
   onDouble,
+  onHalf,
   onClearSelection,
 }: TimelineToolbarProps) {
   const hasSelection = selectedIntervals.length > 0
@@ -79,15 +79,28 @@ export function TimelineToolbar({
           </button>
         )}
 
-        {/* Double Button */}
+        {/* Half Duration Button */}
+        {hasSelection && (
+          <button
+            onClick={onHalf}
+            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors group relative"
+            title="Half the duration of selected intervals (Ctrl+[)">
+            <RotateCcw size={16} />
+            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              Half Duration (Ctrl+[)
+            </span>
+          </button>
+        )}
+
+        {/* Double Duration Button */}
         {hasSelection && (
           <button
             onClick={onDouble}
             className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors group relative"
-            title="Double the duration of selected intervals (Ctrl+Shift+D)">
+            title="Double the duration of selected intervals (Ctrl+])">
             <RotateCcw size={16} />
             <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Double Duration (Ctrl+Shift+D)
+              Double Duration (Ctrl+])
             </span>
           </button>
         )}

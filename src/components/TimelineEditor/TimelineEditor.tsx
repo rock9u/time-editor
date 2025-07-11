@@ -1,29 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { useTimelineReducer } from './useTimelineReducer'
-import { IntervalGrid } from './IntervalGrid'
-import { IntervalEditDialog } from './IntervalEditDialog'
-import { TimelineToolbar } from './TimelineToolbar'
-import { TimelineContextMenu } from './TimelineContextMenu'
-import { GridSettingsPanel } from './GridSettingsPanel'
-import { generateUUID } from '../../lib/utils'
-import { formatTimestamp, getDurationText } from '../../lib/timeline-utils'
+import { DateTime } from 'luxon'
+import { useCallback, useEffect, useState } from 'react'
 import {
-  INTERVAL_COLORS,
-  DEFAULT_METADATA,
-  UI_CONSTANTS,
-  TIMELINE_CONSTANTS,
   DEFAULT_GRID_SETTINGS,
+  DEFAULT_METADATA,
   DEFAULT_TIMELINE_BOUNDS,
+  INTERVAL_COLORS,
   TIMELINE_BEHAVIOR,
   TIMELINE_VIEW_MODES,
-  KEYBOARD_SHORTCUTS,
+  UI_CONSTANTS,
 } from '../../lib/constants'
+import { formatTimestamp, getDurationText } from '../../lib/timeline-utils'
+import { generateUUID } from '../../lib/utils'
 import type {
+  GridIntervalUnit,
   GridSettings,
   TimelineBounds,
-  GridIntervalUnit,
   TimelineInterval,
 } from '../../types/timeline'
+import { GridSettingsPanel } from './GridSettingsPanel'
+import { IntervalEditDialog } from './IntervalEditDialog'
+import { IntervalGrid } from './IntervalGrid'
+import { TimelineContextMenu } from './TimelineContextMenu'
+import { TimelineToolbar } from './TimelineToolbar'
+import { useTimelineReducer } from './useTimelineReducer'
 
 export function TimelineEditor() {
   const {
@@ -63,7 +62,7 @@ export function TimelineEditor() {
   // Clipboard state
   const [clipboard, setClipboard] = useState<TimelineInterval[]>([])
 
-  // Enhanced keyboard shortcuts
+  // Enhanced keyboard shortcuts with new mappings
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle shortcuts if no input is focused
@@ -77,7 +76,6 @@ export function TimelineEditor() {
       const isCtrlOrCmd = e.ctrlKey || e.metaKey
       const isShift = e.shiftKey
 
-      //TODO: parse constant KEYBOARD_SHORTCUTS
       if (isCtrlOrCmd && !isShift) {
         switch (e.key.toLowerCase()) {
           case 'c':
@@ -92,15 +90,15 @@ export function TimelineEditor() {
             e.preventDefault()
             handleDuplicate()
             break
-          case '1':
+          case '[':
             e.preventDefault()
             handleHalf()
             break
-          case '2':
+          case ']':
             e.preventDefault()
             handleDouble()
             break
-          case '3':
+          case 'g':
             e.preventDefault()
             setIsGridSettingsOpen(true)
             break
@@ -226,18 +224,18 @@ export function TimelineEditor() {
   }
 
   const handleAddTestInterval = () => {
-    const now = Date.now()
+    const testMonth = DateTime.now().startOf('month').plus({
+      months: intervals.length,
+    })
     const colorIndex = intervals.length % INTERVAL_COLORS.length
     const newInterval = {
       id: generateUUID(),
-      startTime: now,
-      endTime: now + TIMELINE_CONSTANTS.MIN_INTERVAL_DURATION * 60 * 60, // 1 hour later
+      startTime: testMonth.toMillis(),
+      endTime: testMonth.plus({ months: 1 }).toMillis(),
       metadata: {
         label: `${DEFAULT_METADATA.LABEL} ${intervals.length + 1}`,
         color: INTERVAL_COLORS[colorIndex],
-        description: `This is a test interval created at ${formatTimestamp(
-          now
-        )}`,
+        description: `This is a test interval created at ${testMonth.toISODate()}`,
         tags: ['test', 'demo'],
       },
     }
@@ -320,7 +318,7 @@ export function TimelineEditor() {
         {/* Controls */}
         <div className="mb-4 space-x-2">
           <button
-            onClick={handleAddTestInterval}
+            onClick={() => handleAddTestInterval()}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
             Add Test Interval
           </button>
@@ -504,6 +502,7 @@ export function TimelineEditor() {
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
           onDouble={handleDouble}
+          onHalf={handleHalf}
           onClearSelection={clearSelectedIntervals}
         />
 

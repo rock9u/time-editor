@@ -84,7 +84,7 @@ export function TimelineContextMenu({
           <ContextMenuItem onClick={onHalf} className="flex items-center gap-2">
             <RotateCcw size={14} />
             Half Duration
-            <span className="ml-auto text-xs text-gray-500">Ctrl+1</span>
+            <span className="ml-auto text-xs text-gray-500">Ctrl+[</span>
           </ContextMenuItem>
         )}
 
@@ -95,7 +95,7 @@ export function TimelineContextMenu({
             className="flex items-center gap-2">
             <RotateCcw size={14} />
             Double Duration
-            <span className="ml-auto text-xs text-gray-500">Ctrl+2</span>
+            <span className="ml-auto text-xs text-gray-500">Ctrl+]</span>
           </ContextMenuItem>
         )}
 
@@ -119,7 +119,7 @@ export function TimelineContextMenu({
           className="flex items-center gap-2">
           <Settings size={14} />
           Change Grid Interval...
-          <span className="ml-auto text-xs text-gray-500">Ctrl+3</span>
+          <span className="ml-auto text-xs text-gray-500">Ctrl+G</span>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
