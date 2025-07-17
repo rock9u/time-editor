@@ -90,6 +90,7 @@ export function TimelineEditor() {
       altKey: boolean
     }
   } | null>(null)
+  const [isDebugExpanded, setIsDebugExpanded] = useState(false)
 
   // Copy functionality
   const handleCopy = useCallback(() => {
@@ -193,16 +194,17 @@ export function TimelineEditor() {
       // Update debug info for all keydown events
       const platform = getPlatform()
       const shortcuts = getPlatformShortcuts()
-      
+
       // Build combo string for debug
       const modifiers = []
       if (e.metaKey) modifiers.push('Meta')
       if (e.ctrlKey) modifiers.push('Ctrl')
       if (e.shiftKey) modifiers.push('Shift')
       if (e.altKey) modifiers.push('Alt')
-      
-      const comboString = modifiers.length > 0 ? `${modifiers.join('+')}+${e.key}` : e.key
-      
+
+      const comboString =
+        modifiers.length > 0 ? `${modifiers.join('+')}+${e.key}` : e.key
+
       setDebugInfo({
         lastKeyEvent: `${comboString} (${e.code})`,
         platform,
@@ -228,7 +230,7 @@ export function TimelineEditor() {
 
       // Use dynamic shortcut matching
       console.log('Checking shortcuts for:', comboString)
-      
+
       if (matchesShortcut(e, 'COPY')) {
         console.log('COPY shortcut matched!')
         e.preventDefault()
@@ -378,49 +380,71 @@ export function TimelineEditor() {
     <div>
       {/* Debug Panel */}
       {debugInfo && (
-        <div className="fixed top-4 right-4 bg-black bg-opacity-80 text-white p-4 rounded-lg text-sm font-mono z-50 max-w-md">
-          <div className="font-bold text-yellow-300 mb-2">Keyboard Debug</div>
-          <div>
-            <strong>Last Key:</strong> {debugInfo.lastKeyEvent}
+        <div
+          className={`fixed top-4 right-4 bg-background bg-opacity-80 text-foreground rounded-lg text-sm font-mono z-50 
+            transition-transform duration-150 ease-in-out
+            border border-foreground/10 p-2 
+            ${
+              isDebugExpanded
+                ? 'max-w-md '
+                : 'max-w-fit rotate-90 translate-x-1/2 translate-y-full'
+            }`}>
+          <div className="flex items-center justify-between">
+            <div className="font-bold text-foreground">Keyboard Debug</div>
+            <button
+              onClick={() => setIsDebugExpanded(!isDebugExpanded)}
+              className="ml-2 text-foreground hover:text-foreground transition-colors">
+              {isDebugExpanded ? '−' : '+'}
+            </button>
           </div>
-          <div>
-            <strong>Platform:</strong> {debugInfo.platform}
-          </div>
-          <div>
-            <strong>Active Element:</strong> {debugInfo.activeElement}
-          </div>
-          <div>
-            <strong>Event Details:</strong>
-          </div>
-          <div className="ml-4 text-xs">
-            <div>key: {debugInfo.eventDetails.key}</div>
-            <div>code: {debugInfo.eventDetails.code}</div>
-            <div>
-              metaKey: {debugInfo.eventDetails.metaKey ? 'true' : 'false'}
+
+          {isDebugExpanded && (
+            <div className="mt-2">
+              <div>
+                <strong>Last Key:</strong> {debugInfo.lastKeyEvent}
+              </div>
+              <div>
+                <strong>Platform:</strong> {debugInfo.platform}
+              </div>
+              <div>
+                <strong>Active Element:</strong> {debugInfo.activeElement}
+              </div>
+              <div>
+                <strong>Event Details:</strong>
+              </div>
+              <div className="ml-4 text-xs">
+                <div>key: {debugInfo.eventDetails.key}</div>
+                <div>code: {debugInfo.eventDetails.code}</div>
+                <div>
+                  metaKey: {debugInfo.eventDetails.metaKey ? 'true' : 'false'}
+                </div>
+                <div>
+                  ctrlKey: {debugInfo.eventDetails.ctrlKey ? 'true' : 'false'}
+                </div>
+                <div>
+                  shiftKey: {debugInfo.eventDetails.shiftKey ? 'true' : 'false'}
+                </div>
+                <div>
+                  altKey: {debugInfo.eventDetails.altKey ? 'true' : 'false'}
+                </div>
+              </div>
+              <div>
+                <strong>Shortcuts:</strong>
+              </div>
+              <div className="ml-4 text-xs">
+                <div>COPY: {debugInfo.shortcuts.COPY}</div>
+                <div>PASTE: {debugInfo.shortcuts.PASTE}</div>
+                <div>DUPLICATE: {debugInfo.shortcuts.DUPLICATE}</div>
+                <div>HALF: {debugInfo.shortcuts.HALF}</div>
+                <div>DOUBLE: {debugInfo.shortcuts.DOUBLE}</div>
+                <div>DELETE: {debugInfo.shortcuts.DELETE}</div>
+                <div>
+                  CLEAR_SELECTION: {debugInfo.shortcuts.CLEAR_SELECTION}
+                </div>
+                <div>GRID_SETTINGS: {debugInfo.shortcuts.GRID_SETTINGS}</div>
+              </div>
             </div>
-            <div>
-              ctrlKey: {debugInfo.eventDetails.ctrlKey ? 'true' : 'false'}
-            </div>
-            <div>
-              shiftKey: {debugInfo.eventDetails.shiftKey ? 'true' : 'false'}
-            </div>
-            <div>
-              altKey: {debugInfo.eventDetails.altKey ? 'true' : 'false'}
-            </div>
-          </div>
-          <div>
-            <strong>Shortcuts:</strong>
-          </div>
-          <div className="ml-4 text-xs">
-            <div>COPY: {debugInfo.shortcuts.COPY}</div>
-            <div>PASTE: {debugInfo.shortcuts.PASTE}</div>
-            <div>DUPLICATE: {debugInfo.shortcuts.DUPLICATE}</div>
-            <div>HALF: {debugInfo.shortcuts.HALF}</div>
-            <div>DOUBLE: {debugInfo.shortcuts.DOUBLE}</div>
-            <div>DELETE: {debugInfo.shortcuts.DELETE}</div>
-            <div>CLEAR_SELECTION: {debugInfo.shortcuts.CLEAR_SELECTION}</div>
-            <div>GRID_SETTINGS: {debugInfo.shortcuts.GRID_SETTINGS}</div>
-          </div>
+          )}
         </div>
       )}
       <TimelineContextMenu

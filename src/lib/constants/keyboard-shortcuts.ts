@@ -6,7 +6,7 @@ export const PLATFORM_SHORTCUTS = {
     DUPLICATE: '⌘D',
     HALF: '⌘[',
     DOUBLE: '⌘]',
-    DELETE: 'Delete',
+    DELETE: 'Delete,Backspace',
     CLEAR_SELECTION: 'Escape',
     GRID_SETTINGS: '⌘G',
   },
@@ -16,7 +16,7 @@ export const PLATFORM_SHORTCUTS = {
     DUPLICATE: 'Ctrl+D',
     HALF: 'Ctrl+[',
     DOUBLE: 'Ctrl+]',
-    DELETE: 'Delete',
+    DELETE: 'Delete,Backspace',
     CLEAR_SELECTION: 'Escape',
     GRID_SETTINGS: 'Ctrl+G',
   },
@@ -26,7 +26,7 @@ export const PLATFORM_SHORTCUTS = {
     DUPLICATE: 'Ctrl+D',
     HALF: 'Ctrl+[',
     DOUBLE: 'Ctrl+]',
-    DELETE: 'Delete',
+    DELETE: 'Delete,Backspace',
     CLEAR_SELECTION: 'Escape',
     GRID_SETTINGS: 'Ctrl+G',
   },
@@ -59,7 +59,10 @@ export function matchesShortcut(
   const shortcutString = shortcuts[shortcut]
   
   // Handle special cases for single key shortcuts
-  if (shortcutString === 'Delete' || shortcutString === 'Escape') {
+  if (shortcutString === 'Delete,Backspace') {
+    return (event.key === 'Delete' || event.key === 'Backspace') && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
+  }
+  if (shortcutString === 'Escape') {
     return event.key === shortcutString && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
   }
   
