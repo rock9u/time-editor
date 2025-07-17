@@ -46,7 +46,15 @@ export const INTERVAL_COLORS = [
 
 export type IntervalColor = (typeof INTERVAL_COLORS)[number]
 
-// Keyboard shortcuts
+// Platform-aware keyboard shortcuts
+export { 
+  PLATFORM_SHORTCUTS,
+  getPlatform,
+  getPlatformShortcuts,
+  matchesShortcut
+} from './keyboard-shortcuts'
+
+// Legacy keyboard shortcuts for backward compatibility
 export const KEYBOARD_SHORTCUTS = {
   COPY: 'Ctrl+C',
   PASTE: 'Ctrl+V',

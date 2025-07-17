@@ -34,7 +34,7 @@ interface IntervalGridProps {
   onIntervalSelect: (id: string) => void
   onIntervalCreate?: (startTime: number, endTime: number) => void
   onIntervalSelectRange?: (startTime: number, endTime: number) => void
-  onIntervalUpdate?: (id: string, updates: Partial<TimelineInterval>) => void
+  onIntervalUpdate?: (id: string, updates: Partial<TimelineIntervalV2>) => void
   onIntervalEdit?: (interval: TimelineInterval) => void
   className?: string
   preventOverlap?: boolean
@@ -79,11 +79,11 @@ export function IntervalGrid({
       isMajor: boolean
     }> = []
 
+    // Start from the timeline's start date instead of calendar boundaries
     let currentDate = DateTime.fromMillis(timelineBounds.minDate)
     const endDate = DateTime.fromMillis(timelineBounds.maxDate)
 
-    currentDate = currentDate.startOf(gridSettings.unit)
-
+    // Generate grid lines starting from the timeline start date
     while (currentDate <= endDate) {
       const timestamp = currentDate.toMillis()
       const position = timestampToPixels(
@@ -195,19 +195,19 @@ export function IntervalGrid({
         timelineBounds.minDate,
         gridDimensions.pixelsPerMs
       )
-      const snappedTimestamp = snapToGrid(timestamp, gridSettings)
+      const snappedTimestamp = snapToGrid(timestamp, gridSettings, timelineBounds.minDate)
 
       // Determine interaction mode based on click type
       const mode = isDoubleClick ? 'creating' : 'selecting'
       setInteractionMode(mode)
       setIsDragging(false)
       setDragStartX(x)
-      setInteractionStart(snappedTimestamp)
-      setInteractionEnd(snappedTimestamp)
+      setInteractionStart(snappedTimestamp.toMillis())
+      setInteractionEnd(snappedTimestamp.toMillis())
 
       // Initialize marquee with snapped position
       const snappedLeft = timestampToPixels(
-        snappedTimestamp,
+        snappedTimestamp.toMillis(),
         timelineBounds.minDate,
         gridDimensions.pixelsPerMs
       )
@@ -284,7 +284,7 @@ export function IntervalGrid({
         const newTime = resizeStartTime + deltaTime
 
         // Snap to grid
-        const snappedTime = snapToGrid(newTime, gridSettings)
+        const snappedTime = snapToGrid(newTime, gridSettings, timelineBounds.minDate)
         const interval = intervals.find(i => i.id === resizingIntervalId)
 
         if (interval) {
@@ -292,14 +292,14 @@ export function IntervalGrid({
           let newEndTime = interval.endTime
 
           if (resizeEdge === 'start') {
-            newStartTime = snappedTime
+            newStartTime = snappedTime.toMillis()
             // Ensure start time is before end time
             if (newStartTime >= interval.endTime) {
               newStartTime =
                 interval.endTime - TIMELINE_CONSTANTS.MIN_INTERVAL_DURATION
             }
           } else {
-            newEndTime = snappedTime
+            newEndTime = snappedTime.toMillis()
             // Ensure end time is after start time
             if (newEndTime <= interval.startTime) {
               newEndTime =
@@ -309,10 +309,16 @@ export function IntervalGrid({
 
           // Check for overlap (excluding the resized interval)
           if (!wouldOverlap(newStartTime, newEndTime, resizingIntervalId)) {
-            onIntervalUpdate?.(resizingIntervalId, {
+            const updates = {
               startTime: newStartTime,
               endTime: newEndTime,
-            })
+              gridUnit: gridSettings.unit,
+              gridAmount: DateTime.fromMillis(newEndTime)
+                .diff(DateTime.fromMillis(newStartTime), gridSettings.unit)
+                .as(gridSettings.unit),
+            }
+            console.log('resizing update', updates)
+            onIntervalUpdate?.(resizingIntervalId, updates)
           }
         }
       } else if (
@@ -326,19 +332,20 @@ export function IntervalGrid({
         const newStartTime = dragStartTime + deltaTime
 
         // Snap to grid
-        const snappedStartTime = snapToGrid(newStartTime, gridSettings)
+        const snappedStartTime = snapToGrid(newStartTime, gridSettings, timelineBounds.minDate)
         const interval = intervals.find(i => i.id === draggedIntervalId)
 
         if (interval) {
           const duration = interval.endTime - interval.startTime
-          const finalStartTime = snappedStartTime
+          const finalStartTime = snappedStartTime.toMillis()
           const finalEndTime = finalStartTime + duration
 
           // Check for overlap (excluding the dragged interval)
           if (!wouldOverlap(finalStartTime, finalEndTime, draggedIntervalId)) {
             onIntervalUpdate?.(draggedIntervalId, {
               startTime: finalStartTime,
-              endTime: finalEndTime,
+              gridAmount: interval.gridAmount,
+              gridUnit: interval.gridUnit,
             })
           }
         }
@@ -349,7 +356,7 @@ export function IntervalGrid({
           timelineBounds.minDate,
           gridDimensions.pixelsPerMs
         )
-        const snappedTimestamp = snapToGrid(timestamp, gridSettings)
+        const snappedTimestamp = snapToGrid(timestamp, gridSettings, timelineBounds.minDate)
 
         // Check if we're dragging (moved beyond threshold)
         if (
@@ -359,11 +366,14 @@ export function IntervalGrid({
           setIsDragging(true)
         }
 
-        setInteractionEnd(snappedTimestamp)
+        setInteractionEnd(snappedTimestamp.toMillis())
 
         // Update marquee based on mode
-        const startTime = Math.min(interactionStart!, snappedTimestamp)
-        const endTime = Math.max(interactionStart!, snappedTimestamp)
+        const startTime = Math.min(
+          interactionStart!,
+          snappedTimestamp.toMillis()
+        )
+        const endTime = Math.max(interactionStart!, snappedTimestamp.toMillis())
         const startLeft = timestampToPixels(
           startTime,
           timelineBounds.minDate,

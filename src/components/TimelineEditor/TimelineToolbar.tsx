@@ -6,6 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useTimeline } from '@/contexts/TimelineContext'
 import {
   ClipboardList,
   Copy,
@@ -14,34 +15,18 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { KEYBOARD_SHORTCUTS } from '../../lib/constants'
-import type { TimelineIntervalV2 } from '../../types/timeline'
-
-interface TimelineToolbarProps {
-  selectedIntervals: TimelineIntervalV2[]
-  clipboard: TimelineIntervalV2[]
-  onCopy: () => void
-  onPaste: () => void
-  onDuplicate: () => void
-  onDelete: () => void
-  onDouble: () => void
-  onHalf: () => void
-  onClearSelection: () => void
-}
+import type { TimelineToolbarProps } from '../../types/shared-props'
 
 export function TimelineToolbar({
-  selectedIntervals,
-  clipboard,
-  onCopy,
-  onPaste,
-  onDuplicate,
-  onDelete,
-  onDouble,
-  onHalf,
   onClearSelection,
 }: TimelineToolbarProps) {
-  const hasSelection = selectedIntervals.length > 0
-  const hasClipboard = clipboard.length > 0
+  const { state, keyboardShortcuts, actionHandlers } = useTimeline()
+  
+  const hasSelection = state.selectedIntervalIds.size > 0
+  const hasClipboard = state.clipboard.length > 0
+  const selectedIntervals = state.intervals.filter(interval =>
+    state.selectedIntervalIds.has(interval.id)
+  )
 
   if (!hasSelection && !hasClipboard) return null
 
@@ -63,13 +48,13 @@ export function TimelineToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onCopy}
+                  onClick={actionHandlers.handleCopy}
                   className="h-8 w-8 p-0">
                   <Copy size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Copy ({KEYBOARD_SHORTCUTS.COPY})</p>
+                <p>Copy ({keyboardShortcuts.COPY})</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -81,13 +66,13 @@ export function TimelineToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onPaste}
+                  onClick={actionHandlers.handlePaste}
                   className="h-8 w-8 p-0">
                   <ClipboardList size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Paste ({KEYBOARD_SHORTCUTS.PASTE})</p>
+                <p>Paste ({keyboardShortcuts.PASTE})</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -99,13 +84,13 @@ export function TimelineToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onDuplicate}
+                  onClick={actionHandlers.handleDuplicate}
                   className="h-8 w-8 p-0">
                   <CopyPlus size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Duplicate ({KEYBOARD_SHORTCUTS.DUPLICATE})</p>
+                <p>Duplicate ({keyboardShortcuts.DUPLICATE})</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -117,13 +102,13 @@ export function TimelineToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onHalf}
+                  onClick={actionHandlers.handleHalf}
                   className="h-8 w-8 p-0">
                   <RotateCcw size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Half Duration ({KEYBOARD_SHORTCUTS.HALF})</p>
+                <p>Half Duration ({keyboardShortcuts.HALF})</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -135,13 +120,13 @@ export function TimelineToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onDouble}
+                  onClick={actionHandlers.handleDouble}
                   className="h-8 w-8 p-0">
                   <RotateCcw size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Double Duration ({KEYBOARD_SHORTCUTS.DOUBLE})</p>
+                <p>Double Duration ({keyboardShortcuts.DOUBLE})</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -153,13 +138,13 @@ export function TimelineToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onDelete}
+                  onClick={actionHandlers.handleDelete}
                   className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
                   <Trash2 size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Delete ({KEYBOARD_SHORTCUTS.DELETE})</p>
+                <p>Delete ({keyboardShortcuts.DELETE})</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -177,7 +162,7 @@ export function TimelineToolbar({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Clear Selection ({KEYBOARD_SHORTCUTS.CLEAR_SELECTION})</p>
+                <p>Clear Selection ({keyboardShortcuts.CLEAR_SELECTION})</p>
               </TooltipContent>
             </Tooltip>
           )}

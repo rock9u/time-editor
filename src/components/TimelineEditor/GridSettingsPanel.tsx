@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -14,15 +15,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { DateTime } from 'luxon'
 import { useState } from 'react'
 import { validateGridSettings } from '../../lib/timeline-utils'
-import type { GridIntervalUnit, GridSettings } from '../../types/timeline'
+import type { GridIntervalUnit, GridSettings, TimelineBounds } from '../../types/timeline'
 
 interface GridSettingsPanelProps {
   isOpen: boolean
   onClose: () => void
   gridSettings: GridSettings
   onGridSettingsChange: (settings: GridSettings) => void
+  timelineBounds: TimelineBounds
+  onTimelineBoundsChange: (bounds: TimelineBounds) => void
 }
 
 const GRID_UNIT_LABELS: Record<GridIntervalUnit, string> = {
@@ -42,13 +46,17 @@ export function GridSettingsPanel({
   onClose,
   gridSettings,
   onGridSettingsChange,
+  timelineBounds,
+  onTimelineBoundsChange,
 }: GridSettingsPanelProps) {
   const [tempSettings, setTempSettings] = useState<GridSettings>(gridSettings)
+  const [tempBounds, setTempBounds] = useState<TimelineBounds>(timelineBounds)
   const [isValid, setIsValid] = useState(true)
 
   const handleSave = () => {
-    if (validateGridSettings(tempSettings)) {
+    if (validateGridSettings(tempSettings) && tempBounds.minDate < tempBounds.maxDate) {
       onGridSettingsChange(tempSettings)
+      onTimelineBoundsChange(tempBounds)
       onClose()
     } else {
       setIsValid(false)
@@ -57,6 +65,7 @@ export function GridSettingsPanel({
 
   const handleCancel = () => {
     setTempSettings(gridSettings)
+    setTempBounds(timelineBounds)
     setIsValid(true)
     onClose()
   }
@@ -79,11 +88,35 @@ export function GridSettingsPanel({
     setIsValid(validateGridSettings(newSettings))
   }
 
+  const handleStartDateChange = (value: string) => {
+    const startDate = DateTime.fromFormat(value, 'yyyy-MM-dd')
+    if (startDate.isValid) {
+      const newBounds = {
+        ...tempBounds,
+        minDate: startDate.startOf('day').toMillis(),
+      }
+      setTempBounds(newBounds)
+      setIsValid(validateGridSettings(tempSettings) && newBounds.minDate < newBounds.maxDate)
+    }
+  }
+
+  const handleEndDateChange = (value: string) => {
+    const endDate = DateTime.fromFormat(value, 'yyyy-MM-dd')
+    if (endDate.isValid) {
+      const newBounds = {
+        ...tempBounds,
+        maxDate: endDate.endOf('day').toMillis(),
+      }
+      setTempBounds(newBounds)
+      setIsValid(validateGridSettings(tempSettings) && newBounds.minDate < newBounds.maxDate)
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Grid Settings</DialogTitle>
+          <DialogTitle>Grid Settings & Timeline Bounds</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -123,12 +156,38 @@ export function GridSettingsPanel({
             </Select>
           </div>
 
+          {/* Timeline Bounds */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="start-date" className="text-right">
+              Start Date
+            </Label>
+            <Input
+              id="start-date"
+              type="date"
+              value={DateTime.fromMillis(tempBounds.minDate).toFormat('yyyy-MM-dd')}
+              onChange={(e) => handleStartDateChange(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="end-date" className="text-right">
+              End Date
+            </Label>
+            <Input
+              id="end-date"
+              type="date"
+              value={DateTime.fromMillis(tempBounds.maxDate).toFormat('yyyy-MM-dd')}
+              onChange={(e) => handleEndDateChange(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+
           {/* Validation Error */}
           {!isValid && (
             <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
               <p className="font-medium">Invalid Settings:</p>
               <p className="text-xs">
-                Please select a valid combination of unit and value.
+                Please select a valid combination of unit and value, and ensure the start date is before the end date.
               </p>
             </div>
           )}
@@ -139,10 +198,13 @@ export function GridSettingsPanel({
               Grid interval: {tempSettings.value}{' '}
               {GRID_UNIT_LABELS[tempSettings.unit]}
             </p>
+            <p>
+              Timeline: {DateTime.fromMillis(tempBounds.minDate).toFormat('yyyy-MM-dd')} to{' '}
+              {DateTime.fromMillis(tempBounds.maxDate).toFormat('yyyy-MM-dd')}
+            </p>
             <p className="text-xs text-gray-500 mt-1">
-              This will affect how intervals snap to the grid and how grid lines
-              are displayed. Luxon ensures accurate calendar calculations for
-              months and years.
+              Grid settings affect how intervals snap to the grid and how grid lines
+              are displayed. Timeline bounds define the visible range of the timeline.
             </p>
           </div>
         </div>

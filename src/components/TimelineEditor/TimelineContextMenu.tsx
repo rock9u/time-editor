@@ -5,7 +5,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import type { TimelineIntervalV2 } from '@/contexts/TimelineContext'
+import { useTimeline } from '@/contexts/TimelineContext'
 import {
   ClipboardList,
   Copy,
@@ -14,36 +14,16 @@ import {
   Settings,
   Trash2,
 } from 'lucide-react'
-import React from 'react'
-import { KEYBOARD_SHORTCUTS } from '../../lib/constants'
-
-interface TimelineContextMenuProps {
-  children: React.ReactNode
-  selectedIntervals: TimelineIntervalV2[]
-  clipboard: TimelineIntervalV2[]
-  onCopy: () => void
-  onPaste: () => void
-  onDuplicate: () => void
-  onDelete: () => void
-  onDouble: () => void
-  onHalf: () => void
-  onOpenGridSettings: () => void
-}
+import type { TimelineContextMenuProps } from '../../types/shared-props'
 
 export function TimelineContextMenu({
   children,
-  selectedIntervals,
-  clipboard,
-  onCopy,
-  onPaste,
-  onDuplicate,
-  onDelete,
-  onDouble,
-  onHalf,
   onOpenGridSettings,
 }: TimelineContextMenuProps) {
-  const hasSelection = selectedIntervals.length > 0
-  const hasClipboard = clipboard.length > 0
+  const { state, keyboardShortcuts, actionHandlers } = useTimeline()
+
+  const hasSelection = state.selectedIntervalIds.size > 0
+  const hasClipboard = state.clipboard.length > 0
 
   return (
     <ContextMenu>
@@ -51,11 +31,13 @@ export function TimelineContextMenu({
       <ContextMenuContent className="w-56 bg-background text-foreground">
         {/* Copy */}
         {hasSelection && (
-          <ContextMenuItem onClick={onCopy} className="flex items-center gap-2">
+          <ContextMenuItem
+            onClick={actionHandlers.handleCopy}
+            className="flex items-center gap-2">
             <Copy size={14} />
             Copy
             <span className="ml-auto text-xs text-gray-500">
-              {KEYBOARD_SHORTCUTS.COPY}
+              {keyboardShortcuts.COPY}
             </span>
           </ContextMenuItem>
         )}
@@ -63,12 +45,12 @@ export function TimelineContextMenu({
         {/* Paste */}
         {hasClipboard && (
           <ContextMenuItem
-            onClick={onPaste}
+            onClick={actionHandlers.handlePaste}
             className="flex items-center gap-2">
             <ClipboardList size={14} />
             Paste
             <span className="ml-auto text-xs text-gray-500">
-              {KEYBOARD_SHORTCUTS.PASTE}
+              {keyboardShortcuts.PASTE}
             </span>
           </ContextMenuItem>
         )}
@@ -76,23 +58,25 @@ export function TimelineContextMenu({
         {/* Duplicate */}
         {hasSelection && (
           <ContextMenuItem
-            onClick={onDuplicate}
+            onClick={actionHandlers.handleDuplicate}
             className="flex items-center gap-2">
             <CopyPlus size={14} />
             Duplicate
             <span className="ml-auto text-xs text-gray-500">
-              {KEYBOARD_SHORTCUTS.DUPLICATE}
+              {keyboardShortcuts.DUPLICATE}
             </span>
           </ContextMenuItem>
         )}
 
         {/* Half Duration */}
         {hasSelection && (
-          <ContextMenuItem onClick={onHalf} className="flex items-center gap-2">
+          <ContextMenuItem
+            onClick={actionHandlers.handleHalf}
+            className="flex items-center gap-2">
             <RotateCcw size={14} />
             Half Duration
             <span className="ml-auto text-xs text-gray-500">
-              {KEYBOARD_SHORTCUTS.HALF}
+              {keyboardShortcuts.HALF}
             </span>
           </ContextMenuItem>
         )}
@@ -100,12 +84,12 @@ export function TimelineContextMenu({
         {/* Double Duration */}
         {hasSelection && (
           <ContextMenuItem
-            onClick={onDouble}
+            onClick={actionHandlers.handleDouble}
             className="flex items-center gap-2">
             <RotateCcw size={14} />
             Double Duration
             <span className="ml-auto text-xs text-gray-500">
-              {KEYBOARD_SHORTCUTS.DOUBLE}
+              {keyboardShortcuts.DOUBLE}
             </span>
           </ContextMenuItem>
         )}
@@ -113,12 +97,12 @@ export function TimelineContextMenu({
         {/* Delete */}
         {hasSelection && (
           <ContextMenuItem
-            onClick={onDelete}
+            onClick={actionHandlers.handleDelete}
             className="flex items-center gap-2 text-red-600">
             <Trash2 size={14} />
             Delete
             <span className="ml-auto text-xs text-gray-500">
-              {KEYBOARD_SHORTCUTS.DELETE}
+              {keyboardShortcuts.DELETE}
             </span>
           </ContextMenuItem>
         )}
@@ -133,7 +117,7 @@ export function TimelineContextMenu({
           <Settings size={14} />
           Change Grid Interval...
           <span className="ml-auto text-xs text-gray-500">
-            {KEYBOARD_SHORTCUTS.GRID_SETTINGS}
+            {keyboardShortcuts.GRID_SETTINGS}
           </span>
         </ContextMenuItem>
       </ContextMenuContent>

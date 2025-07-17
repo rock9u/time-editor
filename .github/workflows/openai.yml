@@ -1,0 +1,45 @@
+name: OpenAI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  openai-review:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Option 1: Using coderabbitai/openai-pr-reviewer (Popular choice)
+      - name: OpenAI PR Reviewer
+        uses: coderabbitai/openai-pr-reviewer@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          debug: false
+          review_simple_changes: false
+          review_comment_lgtm: false
+          openai_light_model: gpt-4o-mini
+          openai_heavy_model: gpt-4o
+          openai_model_temperature: 0.1
+          language: en-US
+          system_message: |
+            You are a senior software engineer conducting a thorough code review.
+            Focus on bugs and security issues.
+            only report on bugs and potential vulnerabilities you find. be concise.
+            Only flag genuine issues. Provide specific line references and actionable solutions.
+            do not flag issues that are not bugs or security issues.
+          summarize: |
+            Provide a concise summary of the main changes and any critical issues found.
+            Use emojis to categorize findings: 🔒 Security, 🐛 Bug, ⚡ Performance, ✅ Good
