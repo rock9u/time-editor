@@ -15,7 +15,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTimeline } from '../../contexts/TimelineContext'
 import {
   DEFAULT_METADATA,
-  DEFAULT_TIMELINE_BOUNDS,
   INTERVAL_COLORS,
   TIMELINE_BEHAVIOR,
   TIMELINE_VIEW_MODES,
@@ -50,6 +49,7 @@ export function TimelineEditor() {
     selectInterval,
     clearSelection,
     setGridSettings,
+    setTimelineBounds,
     copyIntervals,
     selectMultipleIntervals,
   } = useTimeline()
@@ -57,7 +57,7 @@ export function TimelineEditor() {
   const { intervals, selectedIntervalIds, gridSettings, clipboard } = state
 
   // Grid settings state
-  const [timelineBounds] = useState<TimelineBounds>(DEFAULT_TIMELINE_BOUNDS)
+  // Timeline bounds are now managed by the context
 
   // Overlap prevention state
   const [preventOverlap, setPreventOverlap] = useState<boolean>(
@@ -376,6 +376,10 @@ export function TimelineEditor() {
     setGridSettings(newSettings)
   }
 
+  const handleTimelineBoundsChange = (newBounds: TimelineBounds) => {
+    setTimelineBounds(newBounds)
+  }
+
   return (
     <div>
       {/* Debug Panel */}
@@ -544,7 +548,7 @@ export function TimelineEditor() {
                 intervals={intervals}
                 selectedIntervalIds={selectedIntervalIds}
                 gridSettings={gridSettings}
-                timelineBounds={timelineBounds}
+                timelineBounds={state.timelineBounds}
                 onIntervalSelect={selectInterval}
                 onIntervalCreate={handleIntervalCreate}
                 onIntervalUpdate={updateInterval}
@@ -658,6 +662,8 @@ export function TimelineEditor() {
             onClose={() => setIsGridSettingsOpen(false)}
             gridSettings={gridSettings}
             onGridSettingsChange={handleGridSettingsChange}
+            timelineBounds={state.timelineBounds}
+            onTimelineBoundsChange={handleTimelineBoundsChange}
           />
         </div>
       </TimelineContextMenu>

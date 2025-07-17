@@ -3,7 +3,7 @@ import { getPlatformShortcuts } from '@/lib/constants'
 import { DateTime } from 'luxon'
 import type { ReactNode } from 'react'
 import { createContext, useContext, useReducer } from 'react'
-import type { GridIntervalUnit, GridSettings } from '../types/timeline'
+import type { GridIntervalUnit, GridSettings, TimelineBounds } from '../types/timeline'
 import type { TimelineActionHandlers } from '../types/shared-props'
 
 // New interval structure using start + grid + amount
@@ -26,6 +26,7 @@ interface TimelineState {
   selectedIntervalIds: Set<string>
   gridSettings: GridSettings
   clipboard: TimelineIntervalV2[]
+  timelineBounds: TimelineBounds
 }
 
 type TimelineAction =
@@ -41,12 +42,17 @@ type TimelineAction =
   | { type: 'SET_GRID_SETTINGS'; payload: GridSettings }
   | { type: 'SET_CLIPBOARD'; payload: TimelineIntervalV2[] }
   | { type: 'CLEAR_CLIPBOARD' }
+  | { type: 'SET_TIMELINE_BOUNDS'; payload: TimelineBounds }
 
 const initialState: TimelineState = {
   intervals: [],
   selectedIntervalIds: new Set(),
   gridSettings: { unit: 'month', value: 1 },
   clipboard: [],
+  timelineBounds: {
+    minDate: Date.now() - 365 * 24 * 60 * 60 * 1000, // 1 year ago
+    maxDate: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year from now
+  },
 }
 
 function timelineReducer(
@@ -119,6 +125,12 @@ function timelineReducer(
         clipboard: [],
       }
 
+    case 'SET_TIMELINE_BOUNDS':
+      return {
+        ...state,
+        timelineBounds: action.payload,
+      }
+
     default:
       return state
   }
@@ -136,6 +148,7 @@ interface TimelineContextValue {
   selectMultipleIntervals: (ids: string[]) => void
   clearSelection: () => void
   setGridSettings: (settings: GridSettings) => void
+  setTimelineBounds: (bounds: TimelineBounds) => void
   copyIntervals: (ids: string[]) => void
   pasteIntervals: () => void
   duplicateIntervals: (ids: string[]) => void
@@ -232,6 +245,10 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
 
   const setGridSettings = (settings: GridSettings) => {
     dispatch({ type: 'SET_GRID_SETTINGS', payload: settings })
+  }
+
+  const setTimelineBounds = (bounds: TimelineBounds) => {
+    dispatch({ type: 'SET_TIMELINE_BOUNDS', payload: bounds })
   }
 
   const copyIntervals = (ids: string[]) => {
@@ -415,6 +432,7 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
     selectMultipleIntervals,
     clearSelection,
     setGridSettings,
+    setTimelineBounds,
     copyIntervals,
     pasteIntervals,
     duplicateIntervals,
