@@ -3,7 +3,7 @@ import { getPlatformShortcuts } from '@/lib/constants'
 import { DateTime } from 'luxon'
 import type { ReactNode } from 'react'
 import { createContext, useContext, useReducer } from 'react'
-import type { GridIntervalUnit, GridSettings, TimelineBounds } from '../types/timeline'
+import type { GridIntervalUnit, GridSettings, TimelineBounds, TimelineLayer, TimelineLayerState } from '../types/timeline'
 import type { TimelineActionHandlers } from '../types/shared-props'
 
 // New interval structure using start + grid + amount
@@ -12,6 +12,7 @@ export interface TimelineIntervalV2 {
   startTime: number // Unix timestamp in milliseconds
   gridUnit: GridIntervalUnit // 'day', 'month', 'year'
   gridAmount: number // How many grid units this interval spans
+  layerId?: string // Optional layer ID for multi-layer support
   metadata?: {
     label?: string
     color?: string
@@ -27,6 +28,7 @@ interface TimelineState {
   gridSettings: GridSettings
   clipboard: TimelineIntervalV2[]
   timelineBounds: TimelineBounds
+  layers: TimelineLayerState
 }
 
 type TimelineAction =
@@ -43,6 +45,11 @@ type TimelineAction =
   | { type: 'SET_CLIPBOARD'; payload: TimelineIntervalV2[] }
   | { type: 'CLEAR_CLIPBOARD' }
   | { type: 'SET_TIMELINE_BOUNDS'; payload: TimelineBounds }
+  | { type: 'ADD_LAYER'; payload: TimelineLayer }
+  | { type: 'UPDATE_LAYER'; payload: { id: string; updates: Partial<TimelineLayer> } }
+  | { type: 'DELETE_LAYER'; payload: string }
+  | { type: 'SET_ACTIVE_LAYER'; payload: string | null }
+  | { type: 'REORDER_LAYERS'; payload: string[] }
 
 const initialState: TimelineState = {
   intervals: [],
@@ -52,6 +59,18 @@ const initialState: TimelineState = {
   timelineBounds: {
     minDate: Date.now() - 365 * 24 * 60 * 60 * 1000, // 1 year ago
     maxDate: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year from now
+  },
+  layers: {
+    layers: [{
+      id: 'default',
+      name: 'Default Layer',
+      visible: true,
+      locked: false,
+      opacity: 1,
+      zIndex: 0,
+    }],
+    activeLayerId: 'default',
+    layerOrder: ['default'],
   },
 }
 
@@ -131,6 +150,62 @@ function timelineReducer(
         timelineBounds: action.payload,
       }
 
+    case 'ADD_LAYER':
+      return {
+        ...state,
+        layers: {
+          ...state.layers,
+          layers: [...state.layers.layers, action.payload],
+          layerOrder: [...state.layers.layerOrder, action.payload.id],
+        },
+      }
+
+    case 'UPDATE_LAYER':
+      return {
+        ...state,
+        layers: {
+          ...state.layers,
+          layers: state.layers.layers.map(layer =>
+            layer.id === action.payload.id
+              ? { ...layer, ...action.payload.updates }
+              : layer
+          ),
+        },
+      }
+
+    case 'DELETE_LAYER':
+      return {
+        ...state,
+        layers: {
+          ...state.layers,
+          layers: state.layers.layers.filter(layer => layer.id !== action.payload),
+          layerOrder: state.layers.layerOrder.filter(id => id !== action.payload),
+          activeLayerId: state.layers.activeLayerId === action.payload 
+            ? state.layers.layers.find(l => l.id !== action.payload)?.id || null
+            : state.layers.activeLayerId,
+        },
+        // Also remove intervals from the deleted layer
+        intervals: state.intervals.filter(interval => interval.layerId !== action.payload),
+      }
+
+    case 'SET_ACTIVE_LAYER':
+      return {
+        ...state,
+        layers: {
+          ...state.layers,
+          activeLayerId: action.payload,
+        },
+      }
+
+    case 'REORDER_LAYERS':
+      return {
+        ...state,
+        layers: {
+          ...state.layers,
+          layerOrder: action.payload,
+        },
+      }
+
     default:
       return state
   }
@@ -162,6 +237,14 @@ interface TimelineContextValue {
   handleHalf: () => void
   handleDelete: () => void
   getMillisecondsPerGridUnit: (settings: GridSettings) => number
+  // Layer functions
+  addLayer: (layer: Omit<TimelineLayer, 'id'>) => void
+  updateLayer: (id: string, updates: Partial<TimelineLayer>) => void
+  deleteLayer: (id: string) => void
+  setActiveLayer: (id: string | null) => void
+  reorderLayers: (layerOrder: string[]) => void
+  getLayerById: (id: string) => TimelineLayer | undefined
+  getIntervalsByLayer: (layerId: string) => TimelineIntervalV2[]
   // Platform-aware keyboard shortcuts
   keyboardShortcuts: ReturnType<typeof getPlatformShortcuts>
   // Action handlers for shared props
@@ -200,7 +283,11 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
   const addInterval = (interval: Omit<TimelineIntervalV2, 'id'>) => {
     dispatch({
       type: 'ADD_INTERVAL',
-      payload: { ...interval, id: generateUUID() },
+      payload: { 
+        ...interval, 
+        id: generateUUID(),
+        layerId: interval.layerId || state.layers.activeLayerId || 'default'
+      },
     })
   }
 
@@ -411,6 +498,40 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Layer functions
+  const addLayer = (layer: Omit<TimelineLayer, 'id'>) => {
+    const newLayer: TimelineLayer = {
+      ...layer,
+      id: generateUUID(),
+      zIndex: state.layers.layers.length,
+    }
+    dispatch({ type: 'ADD_LAYER', payload: newLayer })
+  }
+
+  const updateLayer = (id: string, updates: Partial<TimelineLayer>) => {
+    dispatch({ type: 'UPDATE_LAYER', payload: { id, updates } })
+  }
+
+  const deleteLayer = (id: string) => {
+    dispatch({ type: 'DELETE_LAYER', payload: id })
+  }
+
+  const setActiveLayer = (id: string | null) => {
+    dispatch({ type: 'SET_ACTIVE_LAYER', payload: id })
+  }
+
+  const reorderLayers = (layerOrder: string[]) => {
+    dispatch({ type: 'REORDER_LAYERS', payload: layerOrder })
+  }
+
+  const getLayerById = (id: string): TimelineLayer | undefined => {
+    return state.layers.layers.find(layer => layer.id === id)
+  }
+
+  const getIntervalsByLayer = (layerId: string): TimelineIntervalV2[] => {
+    return state.intervals.filter(interval => interval.layerId === layerId)
+  }
+
   // Create action handlers object for shared props
   const actionHandlers: TimelineActionHandlers = {
     handleCopy,
@@ -447,6 +568,14 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
     handleHalf,
     handleDelete,
     getMillisecondsPerGridUnit,
+    // Layer functions
+    addLayer,
+    updateLayer,
+    deleteLayer,
+    setActiveLayer,
+    reorderLayers,
+    getLayerById,
+    getIntervalsByLayer,
     // Platform-aware keyboard shortcuts
     keyboardShortcuts,
     // Action handlers for shared props

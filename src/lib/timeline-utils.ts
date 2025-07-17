@@ -35,65 +35,110 @@ export function pixelsToTimestamp(
  */
 export function snapToGrid(
   timestamp: number,
-  gridSettings: Partial<GridSettings>
+  gridSettings: Partial<GridSettings>,
+  startDate?: number
 ): {
   toMillis: () => number
   gridAmount: number
   unit: GridIntervalUnit
 } {
   const dt = DateTime.fromMillis(timestamp)
-  const { unit, value } = gridSettings
+  const { unit, value = 1 } = gridSettings
 
-  // Use Luxon's startOf method for accurate calendar boundaries
+  // If no start date provided, use calendar boundaries (legacy behavior)
+  if (!startDate) {
+    // Use Luxon's startOf method for accurate calendar boundaries
+    let snappedDateTime: DateTime
+
+    switch (unit) {
+      case 'day':
+        // Start of the day, then add the specified number of days
+        snappedDateTime = dt.startOf('day')
+        if (value > 1) {
+          // Calculate which day block we're in
+          const dayOfYear = dt.ordinal
+          const blockNumber = Math.floor(dayOfYear / value)
+          const targetDay = blockNumber * value + 1
+          snappedDateTime = DateTime.fromObject({
+            year: dt.year,
+            ordinal: targetDay,
+          })
+        }
+        break
+
+      case 'month':
+        // Start of the month, then add the specified number of months
+        snappedDateTime = dt.startOf('month')
+        if (value > 1) {
+          // Calculate which month block we're in
+          const monthOfYear = dt.month
+          const blockNumber = Math.floor((monthOfYear - 1) / value)
+          const targetMonth = blockNumber * value + 1
+          snappedDateTime = DateTime.fromObject({
+            year: dt.year,
+            month: targetMonth,
+            day: 1,
+          })
+        }
+        break
+
+      case 'year':
+        // Start of the year, then add the specified number of years
+        snappedDateTime = dt.startOf('year')
+        if (value > 1) {
+          // Calculate which year block we're in
+          const year = dt.year
+          const blockNumber = Math.floor(year / value)
+          const targetYear = blockNumber * value
+          snappedDateTime = DateTime.fromObject({
+            year: targetYear,
+            month: 1,
+            day: 1,
+          })
+        }
+        break
+
+      default:
+        return {
+          toMillis: () => timestamp,
+          gridAmount: 1,
+          unit: 'day',
+        }
+    }
+
+    return {
+      toMillis: () => snappedDateTime.toMillis(),
+      gridAmount: value,
+      unit: unit,
+    }
+  }
+
+  // New behavior: snap relative to timeline start date
+  const startDt = DateTime.fromMillis(startDate)
+  const timeDiff = timestamp - startDate
   let snappedDateTime: DateTime
 
   switch (unit) {
-    case 'day':
-      // Start of the day, then add the specified number of days
-      snappedDateTime = dt.startOf('day')
-      if (value > 1) {
-        // Calculate which day block we're in
-        const dayOfYear = dt.ordinal
-        const blockNumber = Math.floor(dayOfYear / value)
-        const targetDay = blockNumber * value + 1
-        snappedDateTime = DateTime.fromObject({
-          year: dt.year,
-          ordinal: targetDay,
-        })
-      }
+    case 'day': {
+      const gridSizeMs = value * 24 * 60 * 60 * 1000 // days to milliseconds
+      const gridNumber = Math.floor(timeDiff / gridSizeMs)
+      snappedDateTime = startDt.plus({ days: gridNumber * value })
       break
+    }
 
-    case 'month':
-      // Start of the month, then add the specified number of months
-      snappedDateTime = dt.startOf('month')
-      if (value > 1) {
-        // Calculate which month block we're in
-        const monthOfYear = dt.month
-        const blockNumber = Math.floor((monthOfYear - 1) / value)
-        const targetMonth = blockNumber * value + 1
-        snappedDateTime = DateTime.fromObject({
-          year: dt.year,
-          month: targetMonth,
-          day: 1,
-        })
-      }
+    case 'month': {
+      const monthsDiff = dt.diff(startDt, 'months').months
+      const gridNumber = Math.floor(monthsDiff / value)
+      snappedDateTime = startDt.plus({ months: gridNumber * value })
       break
+    }
 
-    case 'year':
-      // Start of the year, then add the specified number of years
-      snappedDateTime = dt.startOf('year')
-      if (value > 1) {
-        // Calculate which year block we're in
-        const year = dt.year
-        const blockNumber = Math.floor(year / value)
-        const targetYear = blockNumber * value
-        snappedDateTime = DateTime.fromObject({
-          year: targetYear,
-          month: 1,
-          day: 1,
-        })
-      }
+    case 'year': {
+      const yearsDiff = dt.diff(startDt, 'years').years
+      const gridNumber = Math.floor(yearsDiff / value)
+      snappedDateTime = startDt.plus({ years: gridNumber * value })
       break
+    }
 
     default:
       return {
@@ -117,7 +162,7 @@ export function calculatePixelsPerMs(
   gridSettings: GridSettings,
   pixelsPerGridUnit: number
 ): number {
-  const { unit, value } = gridSettings
+  const { unit, value = 1 } = gridSettings
   let millisecondsPerUnit: number
   const now = DateTime.now()
   const nextMonth = now.plus({ months: value })
@@ -146,7 +191,7 @@ export function calculatePixelsPerMs(
  * Get milliseconds per grid unit using Luxon for accuracy
  */
 export function getMillisecondsPerGridUnit(gridSettings: GridSettings): number {
-  const { unit, value } = gridSettings
+  const { unit, value = 1 } = gridSettings
   const now = DateTime.now()
   const nextMonth = now.plus({ months: value })
   const nextYear = now.plus({ years: value })
@@ -442,7 +487,7 @@ export function getCreationDurationText(
  * Validate grid settings
  */
 export function validateGridSettings(gridSettings: GridSettings): boolean {
-  const { unit, value } = gridSettings
+  const { unit, value = 1 } = gridSettings
 
   if (value < 1) return false
 
@@ -466,7 +511,7 @@ export function getNextGridLine(
   gridSettings: GridSettings
 ): number {
   const dt = DateTime.fromMillis(timestamp)
-  const { unit, value } = gridSettings
+  const { unit, value = 1 } = gridSettings
 
   let nextDateTime: DateTime
 
@@ -495,7 +540,7 @@ export function getPreviousGridLine(
   gridSettings: GridSettings
 ): number {
   const dt = DateTime.fromMillis(timestamp)
-  const { unit, value } = gridSettings
+  const { unit, value = 1 } = gridSettings
 
   let prevDateTime: DateTime
 
@@ -522,12 +567,13 @@ export function getPreviousGridLine(
  */
 export function findNearestGridLine(
   timestamp: number,
-  gridSettings: GridSettings
+  gridSettings: GridSettings,
+  timelineStartDate?: number
 ): number {
-  const { unit, value } = gridSettings
+  const { unit, value = 1 } = gridSettings
 
   // Get the current grid unit boundaries
-  const currentGridStart = snapToGrid(timestamp, gridSettings).toMillis()
+  const currentGridStart = snapToGrid(timestamp, gridSettings, timelineStartDate).toMillis()
   const currentGridEnd = DateTime.fromMillis(currentGridStart)
     .plus({ [unit]: value })
     .toMillis()

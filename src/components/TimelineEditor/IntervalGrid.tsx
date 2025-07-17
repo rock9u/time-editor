@@ -79,11 +79,11 @@ export function IntervalGrid({
       isMajor: boolean
     }> = []
 
+    // Start from the timeline's start date instead of calendar boundaries
     let currentDate = DateTime.fromMillis(timelineBounds.minDate)
     const endDate = DateTime.fromMillis(timelineBounds.maxDate)
 
-    currentDate = currentDate.startOf(gridSettings.unit)
-
+    // Generate grid lines starting from the timeline start date
     while (currentDate <= endDate) {
       const timestamp = currentDate.toMillis()
       const position = timestampToPixels(
@@ -195,7 +195,7 @@ export function IntervalGrid({
         timelineBounds.minDate,
         gridDimensions.pixelsPerMs
       )
-      const snappedTimestamp = snapToGrid(timestamp, gridSettings)
+      const snappedTimestamp = snapToGrid(timestamp, gridSettings, timelineBounds.minDate)
 
       // Determine interaction mode based on click type
       const mode = isDoubleClick ? 'creating' : 'selecting'
@@ -284,7 +284,7 @@ export function IntervalGrid({
         const newTime = resizeStartTime + deltaTime
 
         // Snap to grid
-        const snappedTime = snapToGrid(newTime, gridSettings)
+        const snappedTime = snapToGrid(newTime, gridSettings, timelineBounds.minDate)
         const interval = intervals.find(i => i.id === resizingIntervalId)
 
         if (interval) {
@@ -332,7 +332,7 @@ export function IntervalGrid({
         const newStartTime = dragStartTime + deltaTime
 
         // Snap to grid
-        const snappedStartTime = snapToGrid(newStartTime, gridSettings)
+        const snappedStartTime = snapToGrid(newStartTime, gridSettings, timelineBounds.minDate)
         const interval = intervals.find(i => i.id === draggedIntervalId)
 
         if (interval) {
@@ -356,7 +356,7 @@ export function IntervalGrid({
           timelineBounds.minDate,
           gridDimensions.pixelsPerMs
         )
-        const snappedTimestamp = snapToGrid(timestamp, gridSettings)
+        const snappedTimestamp = snapToGrid(timestamp, gridSettings, timelineBounds.minDate)
 
         // Check if we're dragging (moved beyond threshold)
         if (

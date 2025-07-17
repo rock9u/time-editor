@@ -5,7 +5,9 @@
       "Bash(npm run build:*)",
       "Bash(timeout 10 npm run dev)",
       "Bash(true)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

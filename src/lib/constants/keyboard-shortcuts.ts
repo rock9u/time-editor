@@ -76,8 +76,15 @@ export function matchesShortcut(
   const needsShift = shortcutString.includes('Shift')
   const needsAlt = shortcutString.includes('Alt')
   
-  // Check if the event matches
-  const keyMatches = event.key === key || event.key.toLowerCase() === key.toLowerCase() || event.code === `Key${key.toUpperCase()}`
+  // Check if the event matches - handle special bracket keys
+  let keyMatches = false
+  if (key === '[') {
+    keyMatches = event.key === '[' || event.code === 'BracketLeft'
+  } else if (key === ']') {
+    keyMatches = event.key === ']' || event.code === 'BracketRight'
+  } else {
+    keyMatches = event.key === key || event.key.toLowerCase() === key.toLowerCase() || event.code === `Key${key.toUpperCase()}`
+  }
   
   // For Mac, ⌘ maps to metaKey
   // For Windows/Linux, Ctrl maps to ctrlKey

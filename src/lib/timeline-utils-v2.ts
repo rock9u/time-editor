@@ -103,10 +103,11 @@ export function intervalsOverlapV2(
 export function moveIntervalV2(
   interval: TimelineIntervalV2,
   newStartTime: number,
-  gridSettings: GridSettings
+  gridSettings: GridSettings,
+  timelineStartDate?: number
 ): TimelineIntervalV2 {
   // Snap the new start time to the grid
-  const snappedStartTime = snapToGrid(newStartTime, gridSettings)
+  const snappedStartTime = snapToGrid(newStartTime, gridSettings, timelineStartDate)
 
   return {
     ...interval,

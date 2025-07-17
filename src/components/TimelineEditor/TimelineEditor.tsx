@@ -33,10 +33,13 @@ import type {
   GridSettings,
   TimelineBounds,
   TimelineInterval,
+  TimelineIntervalV2,
 } from '../../types/timeline'
 import { GridSettingsPanel } from './GridSettingsPanel'
 import { IntervalEditDialog } from './IntervalEditDialog'
 import { IntervalGrid } from './IntervalGrid'
+import { LayerManager } from './LayerManager'
+import { LayerIndicator, LayerVisualization } from './LayerVisualization'
 import { TimelineContextMenu } from './TimelineContextMenu'
 import { TimelineToolbar } from './TimelineToolbar'
 
@@ -74,6 +77,7 @@ export function TimelineEditor() {
     useState<TimelineInterval | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isGridSettingsOpen, setIsGridSettingsOpen] = useState(false)
+  const [isLayerManagerOpen, setIsLayerManagerOpen] = useState(false)
 
   // Debug state
   const [debugInfo, setDebugInfo] = useState<{
@@ -360,6 +364,19 @@ export function TimelineEditor() {
     setIsEditDialogOpen(true)
   }
 
+  const handleIntervalEditV2 = (interval: TimelineIntervalV2) => {
+    // Convert V2 interval to legacy format for the dialog
+    const legacyInterval: TimelineInterval = {
+      id: interval.id,
+      startTime: interval.startTime,
+      endTime: DateTime.fromMillis(interval.startTime).plus({ [interval.gridUnit]: interval.gridAmount }).toMillis(),
+      layerId: interval.layerId,
+      metadata: interval.metadata,
+    }
+    setEditingInterval(legacyInterval)
+    setIsEditDialogOpen(true)
+  }
+
   const handleEditDialogClose = () => {
     setIsEditDialogOpen(false)
     setEditingInterval(null)
@@ -525,6 +542,9 @@ export function TimelineEditor() {
               <Button onClick={() => handleAddTestInterval()} variant="outline">
                 Add Test Interval
               </Button>
+              <Button onClick={() => setIsLayerManagerOpen(true)} variant="outline">
+                Manage Layers
+              </Button>
               <Button onClick={clearSelection} variant="outline">
                 Clear Selection
               </Button>
@@ -536,6 +556,9 @@ export function TimelineEditor() {
               </Button>
             </div>
           </div>
+
+          {/* Active Layer Indicator */}
+          <LayerIndicator className="mb-2" />
 
           {/* Timeline Grid */}
           <div className="mb-4">
@@ -556,6 +579,24 @@ export function TimelineEditor() {
                 onIntervalEdit={handleIntervalEdit}
                 preventOverlap={preventOverlap}
                 viewMode={viewMode}
+                className="min-w-full"
+              />
+            </div>
+          </div>
+
+          {/* Multi-Layer Visualization */}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">
+              Multi-Layer View
+            </h3>
+            <div className="overflow-x-auto">
+              <LayerVisualization
+                intervals={intervals}
+                selectedIntervalIds={selectedIntervalIds}
+                gridSettings={gridSettings}
+                timelineBounds={state.timelineBounds}
+                onIntervalSelect={selectInterval}
+                onIntervalEdit={handleIntervalEditV2}
                 className="min-w-full"
               />
             </div>
@@ -664,6 +705,12 @@ export function TimelineEditor() {
             onGridSettingsChange={handleGridSettingsChange}
             timelineBounds={state.timelineBounds}
             onTimelineBoundsChange={handleTimelineBoundsChange}
+          />
+
+          {/* Layer Manager */}
+          <LayerManager
+            isOpen={isLayerManagerOpen}
+            onClose={() => setIsLayerManagerOpen(false)}
           />
         </div>
       </TimelineContextMenu>
