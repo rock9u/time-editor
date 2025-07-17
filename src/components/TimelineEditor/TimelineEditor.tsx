@@ -21,6 +21,11 @@ import {
   TIMELINE_VIEW_MODES,
   UI_CONSTANTS,
 } from '../../lib/constants'
+import {
+  matchesShortcut,
+  getPlatform,
+  getPlatformShortcuts,
+} from '../../lib/constants/keyboard-shortcuts'
 import { formatTimestamp, getDurationText } from '../../lib/timeline-utils'
 import { createIntervalV2 } from '../../lib/timeline-utils-v2'
 import { generateUUID } from '../../lib/utils'
@@ -70,59 +75,21 @@ export function TimelineEditor() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isGridSettingsOpen, setIsGridSettingsOpen] = useState(false)
 
-  // Enhanced keyboard shortcuts with new mappings
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle shortcuts if no input is focused
-      if (
-        document.activeElement?.tagName === 'INPUT' ||
-        document.activeElement?.tagName === 'TEXTAREA'
-      ) {
-        return
-      }
-
-      const isCtrlOrCmd = e.ctrlKey || e.metaKey
-      const isShift = e.shiftKey
-
-      if (isCtrlOrCmd && !isShift) {
-        switch (e.key.toLowerCase()) {
-          case 'c':
-            e.preventDefault()
-            handleCopy()
-            break
-          case 'v':
-            e.preventDefault()
-            handlePasteClipboard()
-            break
-          case 'd':
-            e.preventDefault()
-            handleDuplicate()
-            break
-          case '[':
-            e.preventDefault()
-            handleHalf()
-            break
-          case ']':
-            e.preventDefault()
-            handleDouble()
-            break
-          case 'g':
-            e.preventDefault()
-            setIsGridSettingsOpen(true)
-            break
-        }
-      } else if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault()
-        handleDelete()
-      } else if (e.key === 'Escape') {
-        e.preventDefault()
-        clearSelection()
-      }
+  // Debug state
+  const [debugInfo, setDebugInfo] = useState<{
+    lastKeyEvent: string
+    platform: string
+    shortcuts: Record<string, string>
+    activeElement: string
+    eventDetails: {
+      key: string
+      code: string
+      metaKey: boolean
+      ctrlKey: boolean
+      shiftKey: boolean
+      altKey: boolean
     }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [selectedIntervalIds, clipboard, intervals])
+  } | null>(null)
 
   // Copy functionality
   const handleCopy = useCallback(() => {
@@ -130,7 +97,7 @@ export function TimelineEditor() {
       selectedIntervalIds.has(interval.id)
     )
     copyIntervals(selectedIntervals.map(interval => interval.id))
-  }, [selectedIntervalIds, state.intervals, copyIntervals])
+  }, [state.intervals, copyIntervals, selectedIntervalIds])
 
   // Paste functionality
   const handlePaste = useCallback(
@@ -172,7 +139,7 @@ export function TimelineEditor() {
     handlePaste(new Set(clipboard.map(interval => interval.id)))
 
     copyIntervals([])
-  }, [clipboard, handlePaste, selectedIntervalIds, copyIntervals])
+  }, [clipboard, handlePaste, copyIntervals])
 
   // Duplicate functionality
   const handleDuplicate = useCallback(() => {
@@ -219,6 +186,95 @@ export function TimelineEditor() {
   const handleDelete = useCallback(() => {
     selectedIntervalIds.forEach(id => deleteInterval(id))
   }, [selectedIntervalIds, deleteInterval])
+
+  // Enhanced keyboard shortcuts using dynamic parsing
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Update debug info for all keydown events
+      const platform = getPlatform()
+      const shortcuts = getPlatformShortcuts()
+      
+      // Build combo string for debug
+      const modifiers = []
+      if (e.metaKey) modifiers.push('Meta')
+      if (e.ctrlKey) modifiers.push('Ctrl')
+      if (e.shiftKey) modifiers.push('Shift')
+      if (e.altKey) modifiers.push('Alt')
+      
+      const comboString = modifiers.length > 0 ? `${modifiers.join('+')}+${e.key}` : e.key
+      
+      setDebugInfo({
+        lastKeyEvent: `${comboString} (${e.code})`,
+        platform,
+        shortcuts,
+        activeElement: document.activeElement?.tagName || 'none',
+        eventDetails: {
+          key: e.key,
+          code: e.code,
+          metaKey: e.metaKey,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey,
+        },
+      })
+
+      // Only handle shortcuts if no input is focused
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA'
+      ) {
+        return
+      }
+
+      // Use dynamic shortcut matching
+      console.log('Checking shortcuts for:', comboString)
+      
+      if (matchesShortcut(e, 'COPY')) {
+        console.log('COPY shortcut matched!')
+        e.preventDefault()
+        handleCopy()
+      } else if (matchesShortcut(e, 'PASTE')) {
+        console.log('PASTE shortcut matched!')
+        e.preventDefault()
+        handlePasteClipboard()
+      } else if (matchesShortcut(e, 'DUPLICATE')) {
+        console.log('DUPLICATE shortcut matched!')
+        e.preventDefault()
+        handleDuplicate()
+      } else if (matchesShortcut(e, 'HALF')) {
+        console.log('HALF shortcut matched!')
+        e.preventDefault()
+        handleHalf()
+      } else if (matchesShortcut(e, 'DOUBLE')) {
+        console.log('DOUBLE shortcut matched!')
+        e.preventDefault()
+        handleDouble()
+      } else if (matchesShortcut(e, 'DELETE')) {
+        console.log('DELETE shortcut matched!')
+        e.preventDefault()
+        handleDelete()
+      } else if (matchesShortcut(e, 'CLEAR_SELECTION')) {
+        console.log('CLEAR_SELECTION shortcut matched!')
+        e.preventDefault()
+        clearSelection()
+      } else if (matchesShortcut(e, 'GRID_SETTINGS')) {
+        console.log('GRID_SETTINGS shortcut matched!')
+        e.preventDefault()
+        setIsGridSettingsOpen(true)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [
+    handleCopy,
+    handlePasteClipboard,
+    handleDuplicate,
+    handleHalf,
+    handleDouble,
+    handleDelete,
+    clearSelection,
+  ])
 
   const handleAddTestInterval = () => {
     const testMonth = DateTime.now().startOf('month').plus({
@@ -319,238 +375,268 @@ export function TimelineEditor() {
   }
 
   return (
-    <TimelineContextMenu
-      selectedIntervals={state.intervals.filter(interval =>
-        selectedIntervalIds.has(interval.id)
+    <div>
+      {/* Debug Panel */}
+      {debugInfo && (
+        <div className="fixed top-4 right-4 bg-black bg-opacity-80 text-white p-4 rounded-lg text-sm font-mono z-50 max-w-md">
+          <div className="font-bold text-yellow-300 mb-2">Keyboard Debug</div>
+          <div>
+            <strong>Last Key:</strong> {debugInfo.lastKeyEvent}
+          </div>
+          <div>
+            <strong>Platform:</strong> {debugInfo.platform}
+          </div>
+          <div>
+            <strong>Active Element:</strong> {debugInfo.activeElement}
+          </div>
+          <div>
+            <strong>Event Details:</strong>
+          </div>
+          <div className="ml-4 text-xs">
+            <div>key: {debugInfo.eventDetails.key}</div>
+            <div>code: {debugInfo.eventDetails.code}</div>
+            <div>
+              metaKey: {debugInfo.eventDetails.metaKey ? 'true' : 'false'}
+            </div>
+            <div>
+              ctrlKey: {debugInfo.eventDetails.ctrlKey ? 'true' : 'false'}
+            </div>
+            <div>
+              shiftKey: {debugInfo.eventDetails.shiftKey ? 'true' : 'false'}
+            </div>
+            <div>
+              altKey: {debugInfo.eventDetails.altKey ? 'true' : 'false'}
+            </div>
+          </div>
+          <div>
+            <strong>Shortcuts:</strong>
+          </div>
+          <div className="ml-4 text-xs">
+            <div>COPY: {debugInfo.shortcuts.COPY}</div>
+            <div>PASTE: {debugInfo.shortcuts.PASTE}</div>
+            <div>DUPLICATE: {debugInfo.shortcuts.DUPLICATE}</div>
+            <div>HALF: {debugInfo.shortcuts.HALF}</div>
+            <div>DOUBLE: {debugInfo.shortcuts.DOUBLE}</div>
+            <div>DELETE: {debugInfo.shortcuts.DELETE}</div>
+            <div>CLEAR_SELECTION: {debugInfo.shortcuts.CLEAR_SELECTION}</div>
+            <div>GRID_SETTINGS: {debugInfo.shortcuts.GRID_SETTINGS}</div>
+          </div>
+        </div>
       )}
-      clipboard={clipboard}
-      onCopy={handleCopy}
-      onPaste={handlePasteClipboard}
-      onDuplicate={handleDuplicate}
-      onDelete={handleDelete}
-      onDouble={handleDouble}
-      onHalf={handleHalf}
-      onOpenGridSettings={() => setIsGridSettingsOpen(true)}>
-      {/* Grid Settings */}
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold mb-2">Grid Settings</h2>
+      <TimelineContextMenu
+        onOpenGridSettings={() => setIsGridSettingsOpen(true)}>
+        {/* Grid Settings */}
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold mb-2">Grid Settings</h2>
 
-        <div className="flex gap-4 justify-between">
-          <div className="flex gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Label>Grid Value:</Label>
-              <Input
-                type="number"
-                min="1"
-                max="12"
-                value={gridSettings.value}
-                onChange={e =>
-                  setGridSettings({
-                    ...gridSettings,
-                    value: parseInt(e.target.value),
-                  })
-                }
-                className="ml-2 px-2 py-1 text-sm border rounded w-16"
-              />
-              <Select
-                value={gridSettings.unit}
-                onValueChange={value =>
-                  setGridSettings({
-                    ...gridSettings,
-                    unit: value as GridIntervalUnit,
-                  })
-                }>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="day">Day(s)</SelectItem>
-                    <SelectItem value="month">Month(s)</SelectItem>
-                    <SelectItem value="year">Year(s)</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Label>View Mode:</Label>
-              <Select
-                value={viewMode}
-                onValueChange={value => setViewMode(value as 'grid' | 'badge')}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select View Mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="grid">Grid</SelectItem>
-                  <SelectItem value="badge">Badge</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <span className="flex items-center gap-2">
-              <Switch
-                checked={preventOverlap}
-                onCheckedChange={setPreventOverlap}
-              />
-              <Label>Prevent Overlap</Label>
-            </span>
-          </div>
-
-          {/* Controls */}
-          <div className="flex gap-2">
-            <Button onClick={() => handleAddTestInterval()} variant="outline">
-              Add Test Interval
-            </Button>
-            <Button onClick={clearSelection} variant="outline">
-              Clear Selection
-            </Button>
-            <Button
-              onClick={handleDelete}
-              variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
-              Delete Selected ({selectedIntervalIds.size})
-            </Button>
-          </div>
-        </div>
-
-        {/* Timeline Grid */}
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">
-            Timeline {viewMode === TIMELINE_VIEW_MODES.BADGE ? 'Badge' : 'Grid'}{' '}
-            View
-          </h3>
-          <div className="overflow-x-auto">
-            <IntervalGrid
-              intervals={intervals}
-              selectedIntervalIds={selectedIntervalIds}
-              gridSettings={gridSettings}
-              timelineBounds={timelineBounds}
-              onIntervalSelect={selectInterval}
-              onIntervalCreate={handleIntervalCreate}
-              onIntervalUpdate={updateInterval}
-              onIntervalSelectRange={handleIntervalSelectRange}
-              onIntervalEdit={handleIntervalEdit}
-              preventOverlap={preventOverlap}
-              viewMode={viewMode}
-              className="min-w-full"
-            />
-          </div>
-        </div>
-
-        {/* Intervals List */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold">
-            Intervals ({intervals.length})
-          </h3>
-          {intervals.map(interval => (
-            <div
-              key={interval.id}
-              className={`p-3 border rounded cursor-pointer ${
-                selectedIntervalIds.has(interval.id)
-                  ? 'border-blue-500 bg-background'
-                  : 'border-gray-300'
-              }`}
-              style={{
-                borderRadius: `${UI_CONSTANTS.INTERVAL_BORDER_RADIUS}px`,
-                minHeight: `${UI_CONSTANTS.INTERVAL_HEIGHT}px`,
-              }}
-              onClick={() => selectInterval(interval.id)}>
+          <div className="flex gap-4 justify-between">
+            <div className="flex gap-4 flex-wrap">
               <div className="flex items-center gap-2">
-                {interval.metadata?.color && (
-                  <div
-                    className="w-4 h-4 rounded"
-                    style={{ backgroundColor: interval.metadata.color }}
-                  />
-                )}
-                <div className="font-medium">
-                  {interval.metadata?.label || DEFAULT_METADATA.LABEL}
+                <Label>Grid Value:</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={gridSettings.value}
+                  onChange={e =>
+                    setGridSettings({
+                      ...gridSettings,
+                      value: parseInt(e.target.value),
+                    })
+                  }
+                  className="ml-2 px-2 py-1 text-sm border rounded w-16"
+                />
+                <Select
+                  value={gridSettings.unit}
+                  onValueChange={value =>
+                    setGridSettings({
+                      ...gridSettings,
+                      unit: value as GridIntervalUnit,
+                    })
+                  }>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="day">Day(s)</SelectItem>
+                      <SelectItem value="month">Month(s)</SelectItem>
+                      <SelectItem value="year">Year(s)</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label>View Mode:</Label>
+                <Select
+                  value={viewMode}
+                  onValueChange={value =>
+                    setViewMode(value as 'grid' | 'badge')
+                  }>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select View Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="grid">Grid</SelectItem>
+                    <SelectItem value="badge">Badge</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <span className="flex items-center gap-2">
+                <Switch
+                  checked={preventOverlap}
+                  onCheckedChange={setPreventOverlap}
+                />
+                <Label>Prevent Overlap</Label>
+              </span>
+            </div>
+
+            {/* Controls */}
+            <div className="flex gap-2">
+              <Button onClick={() => handleAddTestInterval()} variant="outline">
+                Add Test Interval
+              </Button>
+              <Button onClick={clearSelection} variant="outline">
+                Clear Selection
+              </Button>
+              <Button
+                onClick={handleDelete}
+                variant="outline"
+                className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
+                Delete Selected ({selectedIntervalIds.size})
+              </Button>
+            </div>
+          </div>
+
+          {/* Timeline Grid */}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">
+              Timeline{' '}
+              {viewMode === TIMELINE_VIEW_MODES.BADGE ? 'Badge' : 'Grid'} View
+            </h3>
+            <div className="overflow-x-auto">
+              <IntervalGrid
+                intervals={intervals}
+                selectedIntervalIds={selectedIntervalIds}
+                gridSettings={gridSettings}
+                timelineBounds={timelineBounds}
+                onIntervalSelect={selectInterval}
+                onIntervalCreate={handleIntervalCreate}
+                onIntervalUpdate={updateInterval}
+                onIntervalSelectRange={handleIntervalSelectRange}
+                onIntervalEdit={handleIntervalEdit}
+                preventOverlap={preventOverlap}
+                viewMode={viewMode}
+                className="min-w-full"
+              />
+            </div>
+          </div>
+
+          {/* Intervals List */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">
+              Intervals ({intervals.length})
+            </h3>
+            {intervals.map(interval => (
+              <div
+                key={interval.id}
+                className={`p-3 border rounded cursor-pointer ${
+                  selectedIntervalIds.has(interval.id)
+                    ? 'border-blue-500 bg-background'
+                    : 'border-gray-300'
+                }`}
+                style={{
+                  borderRadius: `${UI_CONSTANTS.INTERVAL_BORDER_RADIUS}px`,
+                  minHeight: `${UI_CONSTANTS.INTERVAL_HEIGHT}px`,
+                }}
+                onClick={() => selectInterval(interval.id)}>
+                <div className="flex items-center gap-2">
+                  {interval.metadata?.color && (
+                    <div
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: interval.metadata.color }}
+                    />
+                  )}
+                  <div className="font-medium">
+                    {interval.metadata?.label || DEFAULT_METADATA.LABEL}
+                  </div>
                 </div>
-              </div>
-              <div className="text-sm text-gray-600">
-                {formatTimestamp(interval.startTime)} -{' '}
-                {formatTimestamp(interval.endTime)}
-              </div>
-              <div className="text-xs text-gray-500">
-                Duration:{' '}
-                {getDurationText(interval.startTime, interval.endTime)}
-              </div>
-              {interval.metadata?.tags && interval.metadata.tags.length > 0 && (
-                <div className="mt-2 flex gap-1">
-                  {interval.metadata.tags.map(tag => (
-                    <span
-                      key={tag}
-                      className="px-2 py-1 text-xs bg-background text-foreground rounded">
-                      {tag}
-                    </span>
-                  ))}
+                <div className="text-sm text-gray-600">
+                  {formatTimestamp(interval.startTime)} -{' '}
+                  {formatTimestamp(interval.endTime)}
                 </div>
-              )}
-            </div>
-          ))}
+                <div className="text-xs text-gray-500">
+                  Duration:{' '}
+                  {getDurationText(interval.startTime, interval.endTime)}
+                </div>
+                {interval.metadata?.tags &&
+                  interval.metadata.tags.length > 0 && (
+                    <div className="mt-2 flex gap-1">
+                      {interval.metadata.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="px-2 py-1 text-xs bg-background text-foreground rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4">
+            {/* Selected Intervals */}
+            {selectedIntervalIds.size > 0 && (
+              <div className="mt-4 p-3 bg-background rounded">
+                <h4 className="font-semibold">Selected Intervals:</h4>
+                <ul className="mt-2 space-y-1">
+                  {state.intervals
+                    .filter(interval => selectedIntervalIds.has(interval.id))
+                    .map(interval => (
+                      <li key={interval.id} className="text-sm">
+                        {interval.metadata?.label || DEFAULT_METADATA.LABEL}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+            {clipboard.length > 0 && (
+              <div className="mt-4 p-3 bg-background rounded">
+                <h4 className="font-semibold">Clipboard:</h4>
+                <ul className="mt-2 space-y-1">
+                  {state.intervals
+                    .filter(interval => selectedIntervalIds.has(interval.id))
+                    .map(interval => (
+                      <li key={interval.id} className="text-sm">
+                        {interval.metadata?.label || DEFAULT_METADATA.LABEL}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Edit Dialog */}
+          <IntervalEditDialog
+            interval={editingInterval}
+            isOpen={isEditDialogOpen}
+            onClose={handleEditDialogClose}
+            onSave={handleEditDialogSave}
+          />
+
+          {/* Floating Toolbar */}
+          <TimelineToolbar onClearSelection={clearSelection} />
+
+          {/* Grid Settings Panel */}
+          <GridSettingsPanel
+            isOpen={isGridSettingsOpen}
+            onClose={() => setIsGridSettingsOpen(false)}
+            gridSettings={gridSettings}
+            onGridSettingsChange={handleGridSettingsChange}
+          />
         </div>
-        <div className="flex gap-4">
-          {/* Selected Intervals */}
-          {selectedIntervalIds.size > 0 && (
-            <div className="mt-4 p-3 bg-background rounded">
-              <h4 className="font-semibold">Selected Intervals:</h4>
-              <ul className="mt-2 space-y-1">
-                {state.intervals
-                  .filter(interval => selectedIntervalIds.has(interval.id))
-                  .map(interval => (
-                    <li key={interval.id} className="text-sm">
-                      {interval.metadata?.label || DEFAULT_METADATA.LABEL}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
-          {clipboard.length > 0 && (
-            <div className="mt-4 p-3 bg-background rounded">
-              <h4 className="font-semibold">Clipboard:</h4>
-              <ul className="mt-2 space-y-1">
-                {state.intervals
-                  .filter(interval => selectedIntervalIds.has(interval.id))
-                  .map(interval => (
-                    <li key={interval.id} className="text-sm">
-                      {interval.metadata?.label || DEFAULT_METADATA.LABEL}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Edit Dialog */}
-        <IntervalEditDialog
-          interval={editingInterval}
-          isOpen={isEditDialogOpen}
-          onClose={handleEditDialogClose}
-          onSave={handleEditDialogSave}
-        />
-
-        {/* Floating Toolbar */}
-        <TimelineToolbar
-          selectedIntervals={state.intervals.filter(interval =>
-            selectedIntervalIds.has(interval.id)
-          )}
-          clipboard={clipboard}
-          onCopy={handleCopy}
-          onPaste={handlePasteClipboard}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
-          onDouble={handleDouble}
-          onHalf={handleHalf}
-          onClearSelection={clearSelection}
-        />
-
-        {/* Grid Settings Panel */}
-        <GridSettingsPanel
-          isOpen={isGridSettingsOpen}
-          onClose={() => setIsGridSettingsOpen(false)}
-          gridSettings={gridSettings}
-          onGridSettingsChange={handleGridSettingsChange}
-        />
-      </div>
-    </TimelineContextMenu>
+      </TimelineContextMenu>
+    </div>
   )
 }

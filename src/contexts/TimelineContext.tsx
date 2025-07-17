@@ -1,8 +1,10 @@
 import { getIntervalEndTime } from '@/lib/timeline-utils-v2'
+import { getPlatformShortcuts } from '@/lib/constants'
 import { DateTime } from 'luxon'
 import type { ReactNode } from 'react'
 import { createContext, useContext, useReducer } from 'react'
 import type { GridIntervalUnit, GridSettings } from '../types/timeline'
+import type { TimelineActionHandlers } from '../types/shared-props'
 
 // New interval structure using start + grid + amount
 export interface TimelineIntervalV2 {
@@ -147,6 +149,10 @@ interface TimelineContextValue {
   handleHalf: () => void
   handleDelete: () => void
   getMillisecondsPerGridUnit: (settings: GridSettings) => number
+  // Platform-aware keyboard shortcuts
+  keyboardShortcuts: ReturnType<typeof getPlatformShortcuts>
+  // Action handlers for shared props
+  actionHandlers: TimelineActionHandlers
 }
 
 const TimelineContext = createContext<TimelineContextValue | undefined>(
@@ -155,6 +161,9 @@ const TimelineContext = createContext<TimelineContextValue | undefined>(
 
 export function TimelineProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(timelineReducer, initialState)
+  
+  // Get platform-specific keyboard shortcuts
+  const keyboardShortcuts = getPlatformShortcuts()
 
   // Helper function to calculate end time using Luxon
   const getIntervalEndTime = (interval: TimelineIntervalV2): number => {
@@ -385,6 +394,16 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Create action handlers object for shared props
+  const actionHandlers: TimelineActionHandlers = {
+    handleCopy,
+    handlePaste,
+    handleDuplicate,
+    handleDelete,
+    handleDouble,
+    handleHalf,
+  }
+
   const value: TimelineContextValue = {
     state,
     dispatch,
@@ -410,6 +429,10 @@ export function TimelineProvider({ children }: { children: ReactNode }) {
     handleHalf,
     handleDelete,
     getMillisecondsPerGridUnit,
+    // Platform-aware keyboard shortcuts
+    keyboardShortcuts,
+    // Action handlers for shared props
+    actionHandlers,
   }
 
   return (
